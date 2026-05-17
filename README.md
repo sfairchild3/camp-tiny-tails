@@ -54,8 +54,8 @@ Every button and link on the site pulls from this one file. ✅
 
 ```js
 const PHOTOS = [
-  { src: '/gallery/biscuit-zoomies.jpg', caption: 'Biscuit doing zoomies!' },
-  { src: '/gallery/poppy-nap.jpg', caption: 'Rest hour with Poppy 😴' },
+  { src: '/gallery/IMG_4278.jpeg', caption: 'Biscuit doing zoomies!' },
+  { src: '/gallery/IMG_4820.jpeg', caption: 'Rest hour with Poppy 😴' },
 ]
 ```
 
