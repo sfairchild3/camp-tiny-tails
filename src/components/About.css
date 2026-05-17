@@ -1,0 +1,36 @@
+.about {
+  background: var(--tan);
+  border-top: 4px dashed var(--bark);
+  border-bottom: 4px dashed var(--bark);
+  padding: 80px 20px;
+}
+
+.about-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.cabin-box {
+  background: var(--forest);
+  border-radius: 14px;
+  aspect-ratio: 4/3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 5rem;
+  box-shadow: 8px 8px 0 var(--bark);
+  gap: 12px;
+}
+
+.cabin-tag {
+  font-family: 'Caveat', cursive;
+  color: var(--gold);
+  font-size: 1.4rem !important;
+}
+
+@media (max-width: 768px) {
+  .about-inner { grid-template-columns: 1fr; }
+}

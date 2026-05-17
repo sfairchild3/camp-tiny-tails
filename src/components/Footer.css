@@ -1,0 +1,71 @@
+.footer {
+  background: var(--forest);
+  color: var(--tan);
+  padding: 50px 20px 28px;
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 36px;
+}
+
+.footer-logo {
+  font-family: 'Rye', serif;
+  font-size: 1.5rem;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.footer-about {
+  font-size: 0.88rem;
+  line-height: 1.7;
+  opacity: 0.72;
+}
+
+.footer h4 {
+  font-family: 'Rye', serif;
+  color: var(--gold);
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+}
+
+.footer ul {
+  list-style: none;
+}
+
+.footer ul li {
+  margin-bottom: 9px;
+  font-size: 0.88rem;
+  opacity: 0.72;
+}
+
+.footer ul li a,
+.footer ul li button {
+  color: var(--tan);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.88rem;
+  padding: 0;
+}
+
+.footer ul li a:hover,
+.footer ul li button:hover {
+  color: var(--gold);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(245,237,214,0.15);
+  padding-top: 22px;
+  text-align: center;
+  font-size: 0.82rem;
+  opacity: 0.45;
+}
+
+@media (max-width: 768px) {
+  .footer-inner { grid-template-columns: 1fr; gap: 28px; }
+}

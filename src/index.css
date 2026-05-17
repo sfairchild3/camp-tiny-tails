@@ -1,0 +1,138 @@
+/* ── GLOBAL STYLES & CSS VARIABLES ── */
+@import url('https://fonts.googleapis.com/css2?family=Rye&family=Nunito:wght@400;600;700;800&family=Caveat:wght@600&display=swap');
+
+:root {
+  --forest: #2D5016;
+  --pine: #3E6B22;
+  --sage: #7A9E5A;
+  --cream: #F5EDD6;
+  --tan: #E8D5A3;
+  --bark: #8B5E3C;
+  --rust: #C4622D;
+  --gold: #D4943A;
+  --sky: #7BBFCF;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--cream);
+  color: var(--forest);
+  font-family: 'Nunito', sans-serif;
+  overflow-x: hidden;
+}
+
+/* ── SHARED LAYOUT ── */
+.container {
+  max-width: 1060px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-family: 'Caveat', cursive;
+  font-size: 1.2rem;
+  color: var(--rust);
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-family: 'Rye', serif;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: var(--forest);
+  margin-bottom: 14px;
+  line-height: 1.15;
+}
+
+.section-body {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #4a4a3a;
+  max-width: 580px;
+}
+
+/* ── SHARED BUTTONS ── */
+.btn-primary {
+  background: var(--rust);
+  color: white;
+  padding: 15px 34px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(196,98,45,0.5);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: inline-block;
+  cursor: pointer;
+  border: none;
+  font-family: 'Nunito', sans-serif;
+}
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(196,98,45,0.6); }
+
+.btn-outline {
+  border: 2px solid var(--tan);
+  color: var(--tan);
+  padding: 13px 30px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  display: inline-block;
+  cursor: pointer;
+  background: transparent;
+  font-family: 'Nunito', sans-serif;
+}
+.btn-outline:hover { background: var(--tan); color: var(--forest); }
+
+.btn-white {
+  background: white;
+  color: var(--rust);
+  padding: 15px 40px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: inline-block;
+  cursor: pointer;
+  border: none;
+  font-family: 'Nunito', sans-serif;
+}
+.btn-white:hover { transform: translateY(-3px); box-shadow: 0 8px 26px rgba(0,0,0,0.24); }
+
+/* ── BANNER ── */
+.banner {
+  background: var(--rust);
+  color: white;
+  text-align: center;
+  padding: 13px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: .8; transform: scale(1); }
+  50%       { opacity: .15; transform: scale(.5); }
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-1.2deg); }
+  50%       { transform: rotate(1.2deg); }
+}

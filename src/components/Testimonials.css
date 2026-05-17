@@ -1,0 +1,73 @@
+.testimonials {
+  background: var(--cream);
+  padding: 80px 20px;
+}
+
+.testi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 44px;
+}
+
+.testi-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 4px 4px 0 rgba(139,94,60,0.15);
+  position: relative;
+}
+
+.testi-card::before {
+  content: '"';
+  font-family: 'Rye', serif;
+  font-size: 4.5rem;
+  color: var(--tan);
+  position: absolute;
+  top: -8px;
+  left: 18px;
+  line-height: 1;
+}
+
+.testi-card p {
+  font-size: 0.93rem;
+  line-height: 1.75;
+  color: #4a4a3a;
+  margin-top: 22px;
+  margin-bottom: 18px;
+  font-style: italic;
+}
+
+.testi-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.testi-av {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--forest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.testi-name {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--forest);
+}
+
+.testi-dog {
+  font-family: 'Caveat', cursive;
+  font-size: 0.95rem;
+  color: var(--rust);
+}
+
+@media (max-width: 768px) {
+  .testi-grid { grid-template-columns: 1fr; }
+}

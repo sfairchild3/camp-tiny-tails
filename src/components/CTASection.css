@@ -1,0 +1,34 @@
+.cta-section {
+  background: var(--rust);
+  text-align: center;
+  padding: 80px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-section::before {
+  content: '🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  font-size: 2rem;
+  letter-spacing: 10px;
+  opacity: 0.15;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.cta-section h2 {
+  font-family: 'Rye', serif;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  color: white;
+  margin-bottom: 14px;
+  text-shadow: 2px 3px 0 rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.cta-section p {
+  color: rgba(255,255,255,0.82);
+  font-size: 1.05rem;
+  margin-bottom: 34px;
+  position: relative;
+}

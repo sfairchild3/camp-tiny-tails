@@ -1,0 +1,118 @@
+.gallery-hero {
+  background: var(--forest);
+  padding: 70px 20px;
+  text-align: center;
+}
+
+.gallery-hero h1 {
+  font-family: 'Rye', serif;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: var(--cream);
+  margin-bottom: 10px;
+}
+
+.gallery-hero p {
+  font-family: 'Caveat', cursive;
+  font-size: 1.3rem;
+  color: var(--tan);
+}
+
+.gallery-section {
+  background: var(--cream);
+  padding: 60px 20px;
+}
+
+.masonry-grid {
+  columns: 3;
+  column-gap: 16px;
+  margin-bottom: 48px;
+}
+
+.gallery-item {
+  break-inside: avoid;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 3px 3px 0 var(--tan);
+  transition: transform 0.2s;
+  position: relative;
+}
+
+.gallery-item:hover { transform: scale(1.02); }
+
+.gallery-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.photo-caption {
+  background: rgba(45,80,22,0.85);
+  color: var(--tan);
+  font-family: 'Caveat', cursive;
+  font-size: 1rem;
+  padding: 8px 12px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Placeholder styles */
+.gallery-item.placeholder {
+  background: var(--forest);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  cursor: default;
+}
+
+.gallery-item.placeholder:nth-child(3n+2) { background: var(--pine); padding: 60px 20px; }
+.gallery-item.placeholder:nth-child(3n+3) { background: var(--bark); padding: 50px 20px; }
+
+.ph-emoji { font-size: 3rem; }
+.ph-label {
+  font-family: 'Caveat', cursive;
+  color: var(--tan);
+  font-size: 1rem;
+}
+
+/* Submit box */
+.gallery-submit {
+  background: var(--tan);
+  border: 2px dashed var(--bark);
+  border-radius: 14px;
+  padding: 32px;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.gallery-submit h3 {
+  font-family: 'Rye', serif;
+  color: var(--forest);
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.gallery-submit p {
+  font-size: 0.9rem;
+  color: #5a5a4a;
+  line-height: 1.7;
+}
+
+.gallery-submit a {
+  color: var(--rust);
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .masonry-grid { columns: 2; }
+}
+
+@media (max-width: 480px) {
+  .masonry-grid { columns: 1; }
+}
