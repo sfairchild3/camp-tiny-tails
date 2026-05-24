@@ -6,17 +6,6 @@
   overflow: hidden;
 }
 
-.cta-section::before {
-  content: '🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  font-size: 2rem;
-  letter-spacing: 10px;
-  opacity: 0.15;
-  line-height: 1.2;
-  pointer-events: none;
-}
-
 .cta-section h2 {
   font-family: 'Rye', serif;
   font-size: clamp(1.8rem, 4vw, 3rem);

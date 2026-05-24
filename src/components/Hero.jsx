@@ -42,7 +42,7 @@ export default function Hero() {
       <span className="hero-badge">🏕️ Small Dogs Only · Overnights &amp; Weekly Stays</span>
       <h1 className="hero-title">Camp<br /><span>Tiny Tails</span></h1>
       <p className="hero-tag">Where small dogs go to have the time of their lives.</p>
-      <p className="hero-sub">Your pup isn't being boarded — they're going to camp. Tail-wagging adventures, new friends, and all the cuddles.</p>
+      <p className="hero-sub">Your pup isn't being boarded, they're going to camp. Tail-wagging adventures, new friends, and all the cuddles.</p>
 
       <div className="hero-btns">
         <a

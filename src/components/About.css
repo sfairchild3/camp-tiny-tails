@@ -25,6 +25,28 @@
   gap: 12px;
 }
 
+/* 1. Target the span wrapping Shane and Odie */
+.cabin-box > span:first-child {
+  display: inline-flex;   /* Allows centering and sizing */
+  align-items: center;
+  justify-content: center;
+  width: 300px;            /* Change this number to make the picture bigger or smaller */
+  height: 300px;           /* Keep width and height equal */
+  border-radius: 50%;     /* Makes the frame a perfect circle */
+  overflow: hidden;       /* Crops the image to the circle */
+  flex-shrink: 0;
+}
+
+/* 2. Style the image to be fully responsive inside that span */
+.cabin-box .about-image {
+  width: 100%;            /* Fills the span widthwise */
+  height: 100%;           /* Fills the span heightwise */
+  object-fit: cover;      /* Crops the photo beautifully so Shane and Odie aren't squished */
+  display: block;
+  object-position: 0% 80%;
+  transform: scale(0.85);
+}
+
 .cabin-tag {
   font-family: 'Caveat', cursive;
   color: var(--gold);

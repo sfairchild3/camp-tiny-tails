@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { EMAIL, PHONE, CITY, INSTAGRAM, FACEBOOK } from '../config'
 import './Footer.css'
 
+
 export default function Footer() {
   const navigate = useNavigate()
 
@@ -18,8 +19,8 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-inner container">
         <div>
-          <div className="footer-logo">🐾 Camp Tiny Tails</div>
-          <p className="footer-about">Small dog boarding with big heart. Born on the trails, built for the little ones. Where every pup is a valued camper, not just a guest.</p>
+          <div className="footer-logo">Camp Tiny Tails</div>
+          <p className="footer-about">Small dog boarding with big heart. Where every pup is a valued camper, not just a guest.</p>
         </div>
         <div>
           <h4>Camp</h4>
@@ -36,11 +37,6 @@ export default function Footer() {
             <li>📍 {CITY}</li>
             <li>📞 {PHONE}</li>
             <li><a href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
-            <li>
-              <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer">Instagram</a>
-              {' · '}
-              <a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a>
-            </li>
           </ul>
         </div>
       </div>

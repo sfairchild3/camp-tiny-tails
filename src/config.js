@@ -11,11 +11,11 @@ export const SQUARE_URL_WEEKLY    = "YOUR_SQUARE_WEEKLY_URL_HERE";
 
 // 👇 Google Form link for new camper applications
 // After creating your Google Form, click Share → Copy link
-export const INTAKE_FORM_URL = "YOUR_GOOGLE_FORM_URL_HERE";
+export const INTAKE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScfJTfpCajlI6SohLQi4avC2DiKuP3jMMZwuoc_eSRupl_zSQ/viewform";
 
 // 👇 Contact info
-export const PHONE    = "(555) 000-0000";
-export const EMAIL    = "hello@camptinytails.com";
-export const CITY     = "Your City, State";
+export const PHONE    = "(510) 927-8430";
+export const EMAIL    = "stay@camptinytails.com";
+export const CITY     = "Alameda, CA";
 export const INSTAGRAM = "https://instagram.com/camptinytails";
 export const FACEBOOK  = "https://facebook.com/camptinytails";

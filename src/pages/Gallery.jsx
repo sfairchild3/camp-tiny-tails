@@ -13,7 +13,8 @@ import './Gallery.css'
  */
 const PHOTOS = [
   // Add your photos here once you have them!
-  // { src: '/gallery/your-photo.jpg', caption: 'Caption here' },
+  { src: '/gallery/IMG_4278.jpeg', caption: 'Biscuit doing zoomies!' },
+  { src: '/gallery/IMG_4820.jpeg', caption: 'Rest hour with Poppy 😴' },
 ]
 
 // Placeholder cards shown until real photos are added

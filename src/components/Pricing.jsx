@@ -36,17 +36,15 @@ export default function Pricing() {
           {/* Weekly */}
           <div className="price-card featured">
             <span className="pop-tag">Best Value</span>
-            <h3>Weekly Stay</h3>
-            <div className="price-amt">$441</div>
-            <div className="price-per">7 nights</div>
+            <h3>Extended Stay</h3>
+            <div className="price-amt">4 nights + </div>
+            <div className="price-per">$441 for 7 nights</div>
             <div className="price-savings">Save 10% vs nightly rate</div>
             <ul className="price-features">
               <li>Everything in Overnight</li>
-              <li>Complimentary bath included</li>
               <li>Camp portrait included</li>
               <li>Weekly activity report</li>
               <li>Priority booking</li>
-              <li>Free nail trim</li>
             </ul>
             <a
               href={SQUARE_URL_WEEKLY}
