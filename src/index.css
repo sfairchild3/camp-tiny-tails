@@ -1,6 +1,7 @@
 /* ── GLOBAL STYLES & CSS VARIABLES ── */
 @import url('https://fonts.googleapis.com/css2?family=Rye&family=Nunito:wght@400;600;700;800&family=Caveat:wght@600&display=swap');
 
+/* --- Backup: Old Forest Theme ---
 :root {
   --forest: #2D5016;
   --pine: #3E6B22;
@@ -11,6 +12,18 @@
   --rust: #C4622D;
   --gold: #D4943A;
   --sky: #7BBFCF;
+}
+*/
+:root {
+  --forest: #231C2C;
+  --pine: #3B2E4A;
+  --sage: #5A4B6E;
+  --cream: #FAF9FC;
+  --tan: #EAE6EE;
+  --bark: #5E5368;
+  --rust: #B85A5C;
+  --gold: #D4AF37;
+  --sky: #B2C9CE;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

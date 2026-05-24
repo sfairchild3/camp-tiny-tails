@@ -24,8 +24,8 @@ export default function Pricing() {
               <li>Bedtime snack included</li>
             </ul>
             <a
-              href={SQUARE_URL_OVERNIGHT}
-              target="_blank"
+              href='/booking'
+              target='_self'
               rel="noopener noreferrer"
               className="btn-card"
             >
@@ -47,12 +47,12 @@ export default function Pricing() {
               <li>Priority booking</li>
             </ul>
             <a
-              href={SQUARE_URL_WEEKLY}
-              target="_blank"
+              href='/booking'
+              target="_self"
               rel="noopener noreferrer"
               className="btn-card"
             >
-              Book a Full Week
+              Book an Extended Stay
             </a>
           </div>
         </div>

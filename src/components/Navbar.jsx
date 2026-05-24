@@ -24,14 +24,15 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <Link to="/" className="nav-logo">
-        🐾 Camp Tiny Tails
+      🦴 Camp Tiny Tails
       </Link>
       <ul className="nav-links">
         <li><button onClick={() => scrollToSection('about')}>About</button></li>
         <li><button onClick={() => scrollToSection('activities')}>Camp Life</button></li>
         <li><button onClick={() => scrollToSection('pricing')}>Rates</button></li>
         <li><Link to="/gallery">Gallery</Link></li>
-        <li><button onClick={openBooking} className="nav-cta">Reserve a Spot</button></li>
+        <li><Link to="/login">Login</Link></li>
+        <li><Link to="/booking" className="nav-cta">Reserve a Spot</Link></li>
       </ul>
     </nav>
   )
