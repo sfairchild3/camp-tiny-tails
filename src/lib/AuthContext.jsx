@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  /*
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -23,6 +24,36 @@ export function AuthProvider({ children }) {
         if (session?.user) {
           fetchProfile(session.user.id)
         } else {
+          setProfile(null)
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+  */
+
+  useEffect(() => {
+    // Handle OAuth callback
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      if (session?.user) fetchProfile(session.user.id)
+      setLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN') {
+          setUser(session?.user ?? null)
+          if (session?.user) {
+            fetchProfile(session.user.id)
+            // Only redirect on OAuth sign in
+            if (session.user.app_metadata.provider === 'google') {
+              window.location.href = '/account'
+            }
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
           setProfile(null)
         }
       }

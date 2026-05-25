@@ -15,7 +15,7 @@ const EMPTY_DOG = {
 const TABS = ['My Bookings', 'My Dogs', 'My Profile']
 
 export default function Account() {
-  const { user, profile, signOut, fetchProfile } = useAuth()
+  const { user, profile, signOut, fetchProfile, authLoading } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
 
@@ -37,10 +37,11 @@ export default function Account() {
   })
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) { navigate('/login'); return }
     fetchData()
     if (location.state?.setupDog) setTab('My Dogs')
-  }, [user])
+  }, [user, authLoading])
 
   useEffect(() => {
     if (profile) {
