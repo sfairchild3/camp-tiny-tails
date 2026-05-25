@@ -37,6 +37,7 @@ export default function Footer() {
             <li>📍 {CITY}</li>
             <li>📞 {PHONE}</li>
             <li><a href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
+            <li><a href="https://camptinytails.com/privacy-policy.html">Privacy Policy</a></li>
           </ul>
         </div>
       </div>
