@@ -37,7 +37,7 @@ export default function Account() {
   })
 
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading) return <div className='account-loading'>Loading... 🦴</div>
     if (!user) { navigate('/login'); return }
     fetchData()
     if (location.state?.setupDog) setTab('My Dogs')
