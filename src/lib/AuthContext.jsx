@@ -34,6 +34,19 @@ export function AuthProvider({ children }) {
   */
 
   useEffect(() => {
+    // Check for OAuth callback in URL
+    if (window.location.hash.includes('access_token')) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setUser(session.user)
+          fetchProfile(session.user.id)
+          setLoading(false)
+          window.location.href = '/account'
+          return
+        }
+      })
+    }
+
     // Handle OAuth callback
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
