@@ -8,18 +8,20 @@ import Booking from './pages/Booking'
 import Account from './pages/Account'
 import Admin from './pages/Admin'
 import Auth from './pages/Auth'
+import Payment from './pages/Payment'
 
 export default function App() {
   return (
     <AuthProvider>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/"        element={<Home />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/account" element={<Account />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/login" element={<Auth />} />
+        <Route path="/admin"   element={<Admin />} />
+        <Route path="/login"   element={<Auth />} />
+        <Route path="/payment" element={<Payment />} />
       </Routes>
       <Footer />
     </AuthProvider>
