@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './lib/AuthContext'
+import { AuthCallback } from './lib/AuthContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -9,6 +10,7 @@ import Account from './pages/Account'
 import Admin from './pages/Admin'
 import Auth from './pages/Auth'
 import Payment from './pages/Payment'
+
 
 export default function App() {
   return (
@@ -22,6 +24,7 @@ export default function App() {
         <Route path="/admin"   element={<Admin />} />
         <Route path="/login"   element={<Auth />} />
         <Route path="/payment" element={<Payment />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
       </Routes>
       <Footer />
     </AuthProvider>

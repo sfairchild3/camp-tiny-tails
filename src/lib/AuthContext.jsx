@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from './supabase'
 
 const AuthContext = createContext({})
 
@@ -8,16 +9,13 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  /*
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
       setLoading(false)
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setUser(session?.user ?? null)
@@ -26,49 +24,7 @@ export function AuthProvider({ children }) {
         } else {
           setProfile(null)
         }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
-  */
-
-  useEffect(() => {
-    // Check for OAuth callback in URL
-    if (window.location.hash.includes('access_token')) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setUser(session.user)
-          fetchProfile(session.user.id)
-          setLoading(false)
-          window.location.href = '/account'
-          return
-        }
-      })
-    }
-
-    // Handle OAuth callback
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN') {
-          setUser(session?.user ?? null)
-          if (session?.user) {
-            fetchProfile(session.user.id)
-            // Only redirect on OAuth sign in
-            if (session.user.app_metadata.provider === 'google') {
-              window.location.href = '/account'
-            }
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setProfile(null)
-        }
+        setLoading(false)
       }
     )
 
@@ -104,7 +60,9 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/account` }
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
     })
     return { data, error }
   }
@@ -126,6 +84,44 @@ export function AuthProvider({ children }) {
     }}>
       {children}
     </AuthContext.Provider>
+  )
+}
+
+export function AuthCallback() {
+  const navigate = useNavigate()
+  const { user, loading } = useAuth()
+
+  useEffect(() => {
+    if (loading) return
+    if (user) {
+      navigate('/account', { replace: true })
+    } else {
+      const timer = setTimeout(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            navigate('/account', { replace: true })
+          } else {
+            navigate('/login', { replace: true })
+          }
+        })
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [user, loading])
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--cream)',
+      fontFamily: 'Rye, serif',
+      fontSize: '1.4rem',
+      color: 'var(--forest)'
+    }}>
+      Logging you in... 🦴
+    </div>
   )
 }
 
