@@ -7,7 +7,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 .nav-logo {
@@ -25,6 +25,12 @@
   display: flex;
   gap: 28px;
   align-items: center;
+}
+
+.nav-links li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .nav-links a,
@@ -64,6 +70,11 @@
 }
 
 @media (max-width: 768px) {
-  .navbar { padding: 14px 20px; }
-  .nav-links { display: none; }
+  .navbar {
+    padding: 14px 20px;
+  }
+
+  .nav-links {
+    display: none;
+  }
 }

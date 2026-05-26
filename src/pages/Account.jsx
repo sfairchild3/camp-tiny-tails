@@ -16,40 +16,67 @@ const TABS = ['My Bookings', 'My Dogs', 'My Profile']
 
 export default function Account() {
   const { user, profile, signOut, fetchProfile, authLoading } = useAuth()
-  const navigate  = useNavigate()
-  const location  = useLocation()
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  const [tab, setTab]         = useState('My Bookings')
+  const [tab, setTab] = useState('My Bookings')
   const [bookings, setBookings] = useState([])
-  const [dogs, setDogs]       = useState([])
+  const [dogs, setDogs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving]   = useState(false)
+  const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
-  const [error, setError]     = useState('')
+  const [error, setError] = useState('')
+  const [isNewUser, setIsNewUser] = useState(!!location.state?.setupDog)
+
+  console.log('location state:', location.state)
+  console.log('isNewUser:', isNewUser)
 
   // Which dog is being edited (null = none, 'new' = add form, id = edit form)
   const [editingDog, setEditingDog] = useState(null)
-  const [dogForm, setDogForm]       = useState(EMPTY_DOG)
+  const [dogForm, setDogForm] = useState(EMPTY_DOG)
 
   // Profile form
   const [profileForm, setProfileForm] = useState({
     full_name: '', phone: '', emergency_contact: '', emergency_phone: ''
   })
 
+  // Handles auth check and initial data load
   useEffect(() => {
-    if (authLoading) return <div className='account-loading'>Loading... 🦴</div>
-    if (!user) { navigate('/login'); return }
+    if (authLoading) return  // wait for auth to finish
+    if (!user) {
+      // Double check with Supabase directly before redirecting
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          navigate('/login')
+        } else {
+          fetchData()
+        }
+      })
+      return
+    }
     fetchData()
-    if (location.state?.setupDog) setTab('My Dogs')
   }, [user, authLoading])
 
+  // Handles setup state and Stripe redirect session
+  useEffect(() => {
+    if (location.state?.setupDog) {
+      setTab('My Dogs')
+      setIsNewUser(true)
+    }
+    // Re-establish session after Stripe redirect
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) fetchData()
+    })
+  }, [])
+
+  // Handles profile form population
   useEffect(() => {
     if (profile) {
       setProfileForm({
-        full_name:         profile.full_name || '',
-        phone:             profile.phone || '',
+        full_name: profile.full_name || '',
+        phone: profile.phone || '',
         emergency_contact: profile.emergency_contact || '',
-        emergency_phone:   profile.emergency_phone || '',
+        emergency_phone: profile.emergency_phone || '',
       })
     }
   }, [profile])
@@ -104,15 +131,15 @@ export default function Account() {
   const startEditDog = (dog) => {
     setError('')
     setDogForm({
-      name:           dog.name || '',
-      breed:          dog.breed || '',
-      weight:         dog.weight || '',
-      age:            dog.age || '',
-      vet_name:       dog.vet_name || '',
-      vet_phone:      dog.vet_phone || '',
-      vaccinated:     dog.vaccinated || false,
+      name: dog.name || '',
+      breed: dog.breed || '',
+      weight: dog.weight || '',
+      age: dog.age || '',
+      vet_name: dog.vet_name || '',
+      vet_phone: dog.vet_phone || '',
+      vaccinated: dog.vaccinated || false,
       spayed_neutered: dog.spayed_neutered || false,
-      special_needs:  dog.special_needs || '',
+      special_needs: dog.special_needs || '',
     })
     setEditingDog(dog.id)
   }
@@ -195,7 +222,7 @@ export default function Account() {
 
   const statusColor = (status) => ({
     confirmed: '#2D5016', pending: '#D4943A',
-    cancelled: '#999',    completed: '#7A9E5A'
+    cancelled: '#999', completed: '#7A9E5A'
   }[status] || '#999')
 
   if (loading) return <div className="account-loading">Loading your account... 🦴</div>
@@ -219,6 +246,14 @@ export default function Account() {
             <button onClick={handleSignOut} className="btn-signout">Sign Out</button>
           </div>
         </div>
+        {isNewUser && (
+          <div className="account-setup-banner">
+            <span>🏕️</span>
+            <div>
+              <strong>Almost there!</strong> Before you can complete your booking we need a little info about your pup. Fill out your dog's profile below and you'll be on your way!
+            </div>
+          </div>
+        )}
 
         {message && <div className="account-message">{message}</div>}
         {error && <div className="account-error">{error}</div>}
@@ -380,25 +415,25 @@ export default function Account() {
               <div className="field">
                 <label>Full Name</label>
                 <input type="text" value={profileForm.full_name}
-                  onChange={e => setProfileForm({...profileForm, full_name: e.target.value})}
+                  onChange={e => setProfileForm({ ...profileForm, full_name: e.target.value })}
                   placeholder="Jane Smith" />
               </div>
               <div className="field">
                 <label>Phone</label>
                 <input type="tel" value={profileForm.phone}
-                  onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
+                  onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
                   placeholder="(555) 000-0000" />
               </div>
               <div className="field">
                 <label>Emergency Contact Name</label>
                 <input type="text" value={profileForm.emergency_contact}
-                  onChange={e => setProfileForm({...profileForm, emergency_contact: e.target.value})}
+                  onChange={e => setProfileForm({ ...profileForm, emergency_contact: e.target.value })}
                   placeholder="John Smith" />
               </div>
               <div className="field">
                 <label>Emergency Contact Phone</label>
                 <input type="tel" value={profileForm.emergency_phone}
-                  onChange={e => setProfileForm({...profileForm, emergency_phone: e.target.value})}
+                  onChange={e => setProfileForm({ ...profileForm, emergency_phone: e.target.value })}
                   placeholder="(555) 000-0000" />
               </div>
             </div>
@@ -421,56 +456,56 @@ function DogFormFields({ form, setForm }) {
         <div className="field">
           <label>Dog's Name *</label>
           <input type="text" value={form.name}
-            onChange={e => setForm({...form, name: e.target.value})}
+            onChange={e => setForm({ ...form, name: e.target.value })}
             required placeholder="Biscuit" />
         </div>
         <div className="field">
           <label>Breed</label>
           <input type="text" value={form.breed}
-            onChange={e => setForm({...form, breed: e.target.value})}
+            onChange={e => setForm({ ...form, breed: e.target.value })}
             placeholder="Chihuahua mix" />
         </div>
         <div className="field">
           <label>Weight (lbs)</label>
           <input type="number" value={form.weight}
-            onChange={e => setForm({...form, weight: e.target.value})}
+            onChange={e => setForm({ ...form, weight: e.target.value })}
             placeholder="12" max="25" />
         </div>
         <div className="field">
           <label>Age (years)</label>
           <input type="number" value={form.age}
-            onChange={e => setForm({...form, age: e.target.value})}
+            onChange={e => setForm({ ...form, age: e.target.value })}
             placeholder="3" />
         </div>
         <div className="field">
           <label>Vet Name</label>
           <input type="text" value={form.vet_name}
-            onChange={e => setForm({...form, vet_name: e.target.value})}
+            onChange={e => setForm({ ...form, vet_name: e.target.value })}
             placeholder="Dr. Smith Animal Hospital" />
         </div>
         <div className="field">
           <label>Vet Phone</label>
           <input type="tel" value={form.vet_phone}
-            onChange={e => setForm({...form, vet_phone: e.target.value})}
+            onChange={e => setForm({ ...form, vet_phone: e.target.value })}
             placeholder="(555) 000-0000" />
         </div>
       </div>
       <div className="field" style={{ marginBottom: '14px' }}>
         <label>Special Needs / Notes</label>
         <textarea value={form.special_needs}
-          onChange={e => setForm({...form, special_needs: e.target.value})}
+          onChange={e => setForm({ ...form, special_needs: e.target.value })}
           placeholder="Allergies, medications, behavioral notes, favorite toys..."
           rows={3} />
       </div>
       <div className="checkbox-group">
         <label className="checkbox-label">
           <input type="checkbox" checked={form.vaccinated}
-            onChange={e => setForm({...form, vaccinated: e.target.checked})} />
+            onChange={e => setForm({ ...form, vaccinated: e.target.checked })} />
           Current on all vaccinations (required)
         </label>
         <label className="checkbox-label">
           <input type="checkbox" checked={form.spayed_neutered}
-            onChange={e => setForm({...form, spayed_neutered: e.target.checked})} />
+            onChange={e => setForm({ ...form, spayed_neutered: e.target.checked })} />
           Spayed / Neutered (required)
         </label>
       </div>

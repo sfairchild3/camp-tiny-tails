@@ -6,14 +6,14 @@ import './Payment.css'
 
 export default function Payment() {
   const { user } = useAuth()
-  const navigate  = useNavigate()
-  const location  = useLocation()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const { booking, summary } = location.state || {}
 
   const [paymentChoice, setPaymentChoice] = useState('deposit') // deposit | full
-  const [loading, setLoading]             = useState(false)
-  const [error, setError]                 = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!user) { navigate('/login'); return }
@@ -32,11 +32,11 @@ export default function Payment() {
       // Call Supabase Edge Function to create Stripe payment intent
       const { data, error: fnError } = await supabase.functions.invoke('create-payment-intent', {
         body: {
-          bookingId:     booking.id,
-          amount:        amountToPay,
-          paymentType:   paymentChoice, // 'deposit' or 'full'
+          bookingId: booking.id,
+          amount: amountToPay,
+          paymentType: paymentChoice, // 'deposit' or 'full'
           customerEmail: user.email,
-          description:   `Camp Tiny Tails — ${summary.nights} night${summary.nights > 1 ? 's' : ''} ${paymentChoice === 'full' ? '(Paid in Full)' : '(Deposit)'}`,
+          description: `Camp Tiny Tails — ${summary.nights} night${summary.nights > 1 ? 's' : ''} ${paymentChoice === 'full' ? '(Paid in Full)' : '(Deposit)'}`,
         }
       })
 
@@ -49,6 +49,21 @@ export default function Payment() {
       setError(err.message || 'Something went wrong. Please try again.')
       setLoading(false)
     }
+  }
+
+  const handleBack = async () => {
+    // Cancel the pending booking so dates are freed up
+    await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', booking.id)
+
+    navigate('/booking', {
+      state: {
+        checkIn: booking.check_in,
+        checkOut: booking.check_out
+      }
+    })
   }
 
   if (!booking || !summary) return null
@@ -140,11 +155,7 @@ export default function Payment() {
             : `Pay $${amountToPay?.toFixed(2)} securely →`}
         </button>
 
-        <button
-          className="btn-back"
-          onClick={() => navigate('/booking')}
-          disabled={loading}
-        >
+        <button className="btn-back" onClick={handleBack} disabled={loading}>
           ← Back to booking
         </button>
       </div>

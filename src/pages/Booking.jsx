@@ -1,29 +1,33 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { calculateBooking, BASE_NIGHTLY_RATE, EXTRA_DOG_RATE } from '../lib/stripe'
 import { useAuth } from '../lib/AuthContext'
 import './Booking.css'
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
-const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+
 
 export default function Booking() {
   const { user } = useAuth()
-  const navigate  = useNavigate()
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  const [blockedDates, setBlockedDates]   = useState([])
-  const [bookedDates, setBookedDates]     = useState([])
-  const [checkIn, setCheckIn]             = useState(null)
-  const [checkOut, setCheckOut]           = useState(null)
-  const [selecting, setSelecting]         = useState('checkin')
-  const [currentMonth, setCurrentMonth]   = useState(new Date())
-  const [summary, setSummary]             = useState(null)
-  const [loading, setLoading]             = useState(false)
-  const [error, setError]                 = useState('')
+  const [blockedDates, setBlockedDates] = useState([])
+  const [bookedDates, setBookedDates] = useState([])
+  const [selecting, setSelecting] = useState('checkin')
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [checkIn, setCheckIn] = useState(location.state?.checkIn || null)
+  const [checkOut, setCheckOut] = useState(location.state?.checkOut || null)
+
 
   // Dog selection
-  const [dogs, setDogs]               = useState([])
+  const [dogs, setDogs] = useState([])
   const [selectedDogs, setSelectedDogs] = useState([])
 
   useEffect(() => { fetchUnavailableDates() }, [])
@@ -54,7 +58,7 @@ export default function Booking() {
     const dates = []
     bookings?.forEach(b => {
       const start = new Date(b.check_in)
-      const end   = new Date(b.check_out)
+      const end = new Date(b.check_out)
       for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
         dates.push(d.toISOString().split('T')[0])
       }
@@ -91,12 +95,12 @@ export default function Booking() {
   }
 
   const isPast = (date) => {
-    const today = new Date(); today.setHours(0,0,0,0)
+    const today = new Date(); today.setHours(0, 0, 0, 0)
     return date < today
   }
 
-  const isInRange  = (date) => { if (!checkIn || !checkOut) return false; const d = date.toISOString().split('T')[0]; return d > checkIn && d < checkOut }
-  const isCheckIn  = (date) => checkIn  === date.toISOString().split('T')[0]
+  const isInRange = (date) => { if (!checkIn || !checkOut) return false; const d = date.toISOString().split('T')[0]; return d > checkIn && d < checkOut }
+  const isCheckIn = (date) => checkIn === date.toISOString().split('T')[0]
   const isCheckOut = (date) => checkOut === date.toISOString().split('T')[0]
 
   const handleDateClick = (date) => {
@@ -113,7 +117,7 @@ export default function Booking() {
   const getDaysInMonth = (date) => {
     const year = date.getFullYear(), month = date.getMonth()
     return {
-      firstDay:    new Date(year, month, 1).getDay(),
+      firstDay: new Date(year, month, 1).getDay(),
       daysInMonth: new Date(year, month + 1, 0).getDate(),
       year, month
     }
@@ -139,17 +143,17 @@ export default function Booking() {
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
-          client_id:        user.id,
-          dog_id:           bookedDogIds[0],
-          dog_count:        bookedDogIds.length,
-          check_in:         checkIn,
-          check_out:        checkOut,
-          nights:           summary.nights,
-          nightly_rate:     summary.nightlyRate,
+          client_id: user.id,
+          dog_id: bookedDogIds[0],
+          dog_count: bookedDogIds.length,
+          check_in: checkIn,
+          check_out: checkOut,
+          nights: summary.nights,
+          nightly_rate: summary.nightlyRate,
           discount_applied: summary.discountApplied,
-          subtotal:         summary.subtotal,
-          deposit_amount:   summary.depositAmount,
-          status:           'pending',
+          subtotal: summary.subtotal,
+          deposit_amount: summary.depositAmount,
+          status: 'pending',
         })
         .select()
         .single()
@@ -195,16 +199,16 @@ export default function Booking() {
               {DAYS.map(d => <div key={d} className="cal-day-label">{d}</div>)}
               {Array(firstDay).fill(null).map((_, i) => <div key={`e${i}`} />)}
               {Array(daysInMonth).fill(null).map((_, i) => {
-                const date   = new Date(year, month, i + 1)
-                const past   = isPast(date)
+                const date = new Date(year, month, i + 1)
+                const past = isPast(date)
                 const unavail = isUnavailable(date)
                 const inRange = isInRange(date)
-                const isCI   = isCheckIn(date)
-                const isCO   = isCheckOut(date)
+                const isCI = isCheckIn(date)
+                const isCO = isCheckOut(date)
                 return (
                   <button
                     key={i}
-                    className={`cal-date ${past?'past':''} ${unavail?'unavailable':''} ${inRange?'in-range':''} ${isCI?'check-in':''} ${isCO?'check-out':''}`}
+                    className={`cal-date ${past ? 'past' : ''} ${unavail ? 'unavailable' : ''} ${inRange ? 'in-range' : ''} ${isCI ? 'check-in' : ''} ${isCO ? 'check-out' : ''}`}
                     onClick={() => handleDateClick(date)}
                     disabled={past || unavail}
                   >
@@ -267,13 +271,13 @@ export default function Booking() {
             {checkIn && (
               <div className="summary-row">
                 <span>Check-in</span>
-                <strong>{new Date(checkIn + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })}</strong>
+                <strong>{new Date(checkIn + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
               </div>
             )}
             {checkOut && (
               <div className="summary-row">
                 <span>Check-out</span>
-                <strong>{new Date(checkOut + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })}</strong>
+                <strong>{new Date(checkOut + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
               </div>
             )}
 

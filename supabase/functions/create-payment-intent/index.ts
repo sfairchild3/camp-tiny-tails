@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
         bookingId,
         paymentType,
       },
-      success_url: `${req.headers.get('origin')}/account?booking=success`,
+      success_url: `${req.headers.get('origin')}/account#booking=success`,
       cancel_url:  `${req.headers.get('origin')}/payment?booking=${bookingId}`,
     })
 

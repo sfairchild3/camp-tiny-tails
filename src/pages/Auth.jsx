@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import { supabase } from '../lib/supabase'
 import './Auth.css'
 
 export default function Auth() {
-  const [mode, setMode] = useState('login') // login | signup
+  const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -14,6 +15,7 @@ export default function Auth() {
 
   const { signIn, signUp, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -21,11 +23,25 @@ export default function Auth() {
     setLoading(true)
 
     if (mode === 'login') {
-      const { error } = await signIn(email, password)
+      const { data, error } = await signIn(email, password)
       if (error) {
         setError(error.message)
       } else {
-        navigate('/account')
+        const from = location.state?.from || '/account'
+
+        // Check if they have a dog profile
+        const { data: dogs } = await supabase
+          .from('dogs')
+          .select('id')
+          .eq('owner_id', data.user.id)
+
+        if (!dogs || dogs.length === 0) {
+          // New user — set up dog first
+          navigate('/account', { state: { setupDog: true, redirectAfter: from } })
+        } else {
+          // Returning user — send them where they were going
+          navigate(from, { replace: true })
+        }
       }
     } else {
       if (!fullName) { setError('Please enter your name'); setLoading(false); return }

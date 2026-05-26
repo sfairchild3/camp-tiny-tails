@@ -30,6 +30,30 @@
   align-items: center;
 }
 
+.account-setup-banner {
+  background: var(--gold);
+  color: var(--forest);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.account-setup-banner span {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.account-setup-banner strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
 .btn-book-another {
   background: var(--forest);
   color: white;

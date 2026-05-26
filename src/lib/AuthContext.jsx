@@ -94,7 +94,18 @@ export function AuthCallback() {
   useEffect(() => {
     if (loading) return
     if (user) {
-      navigate('/account', { replace: true })
+      // Check if they have a dog profile
+      supabase
+        .from('dogs')
+        .select('id')
+        .eq('owner_id', user.id)
+        .then(({ data: dogs }) => {
+          if (!dogs || dogs.length === 0) {
+            navigate('/account', { state: { setupDog: true, redirectAfter: '/booking' } })
+          } else {
+            navigate('/account', { replace: true })
+          }
+        })
     } else {
       const timer = setTimeout(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -124,5 +135,4 @@ export function AuthCallback() {
     </div>
   )
 }
-
 export const useAuth = () => useContext(AuthContext)

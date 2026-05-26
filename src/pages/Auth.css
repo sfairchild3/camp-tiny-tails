@@ -1,6 +1,6 @@
 .auth-wrap {
   min-height: 100vh;
-  background: linear-gradient(180deg, #1a3009 0%, var(--forest) 60%, var(--sage) 100%);
+  background: linear-gradient(180deg, #0a0016  0%, var(--forest) 60%, var(--sage) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
