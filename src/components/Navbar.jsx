@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import { useState } from 'react'
 import './Navbar.css'
 
 export default function Navbar() {
@@ -24,6 +25,8 @@ export default function Navbar() {
     }
   }
 
+  const [menuOpen, setMenuOpen] = useState(false)
+
 
 
   return (
@@ -31,7 +34,13 @@ export default function Navbar() {
       <Link to="/" className="nav-logo">
         🦴 Camp Tiny Tails
       </Link>
-      <ul className="nav-links">
+      <button
+        className="nav-hamburger"
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        {menuOpen ? '✕' : '☰'}
+      </button>
+      <ul className={`nav-links ${menuOpen ? 'open' : ''}`}>
         <li><button onClick={() => scrollToSection('about')}>About</button></li>
         <li><button onClick={() => scrollToSection('activities')}>Camp Life</button></li>
         <li><button onClick={() => scrollToSection('pricing')}>Rates</button></li>

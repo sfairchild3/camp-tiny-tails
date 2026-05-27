@@ -78,3 +78,33 @@
     display: none;
   }
 }
+
+.nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--tan);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+@media (max-width: 768px) {
+  .nav-hamburger { display: block; }
+  
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: 57px;  
+    left: 0;
+    right: 0;
+    background: var(--forest);
+    flex-direction: column;
+    padding: 20px;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 99;
+  }
+
+  .nav-links.open { display: flex; }
+}
