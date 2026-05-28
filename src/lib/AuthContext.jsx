@@ -116,7 +116,7 @@ export function AuthCallback() {
             navigate('/login', { replace: true })
           }
         })
-      }, 2000)
+      }, 4000)
       return () => clearTimeout(timer)
     }
   }, [user, loading])
