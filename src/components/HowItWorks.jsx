@@ -11,8 +11,8 @@ const STEPS = [
   {
     num: '2',
     title: 'New Campers Only',
-    desc: 'First-time visitors fill out a quick camper application so we can get to know your pup.',
-    action: { label: 'Camper Application →', url: INTAKE_FORM_URL },
+    desc: 'First-time visitors fill out your camper details so we can get to know your pup.',
+    action: null,
   },
   {
     num: '3',

@@ -150,6 +150,26 @@
 .btn-admin-cancel { background: #f5f5f5; color: #999; }
 .btn-confirm:hover, .btn-complete:hover, .btn-admin-cancel:hover { opacity: 0.82; }
 
+.btn-balance {
+  background: var(--sage);
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-balance:hover { opacity: 0.82; }
+
+.balance-paid-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--sage);
+}
+
 /* ── CLIENTS ── */
 .client-card {
   background: white;

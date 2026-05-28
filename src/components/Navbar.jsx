@@ -44,7 +44,7 @@ export default function Navbar() {
         <li><button onClick={() => scrollToSection('about')}>About</button></li>
         <li><button onClick={() => scrollToSection('activities')}>Camp Life</button></li>
         <li><button onClick={() => scrollToSection('pricing')}>Rates</button></li>
-        <li><Link to="/gallery">Gallery</Link></li>
+        <li><Link to="/gallery" onClick={() => window.scrollTo(0, 0)}>Gallery</Link></li>
         <li>
           {user
             ? <>

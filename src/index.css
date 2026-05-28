@@ -13,7 +13,7 @@
   --gold: #D4943A;
   --sky: #7BBFCF;
 }
-*/
+
 :root {
   --forest: #231C2C;
   --pine: #3B2E4A;
@@ -25,6 +25,20 @@
   --gold: #D4AF37;
   --sky: #B2C9CE;
 }
+*/
+
+:root {
+  --forest: #231C2C;
+  --pine: #3B2E4A;
+  --sage: #5A4B6E;
+  --cream: #FAF9FC;
+  --tan: #EAE6EE;
+  --bark: #5E5368;
+  --rust: #4A9B8E;  
+  --gold: #7BBFB5; 
+  --sky: #B2C9CE;
+}
+
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 

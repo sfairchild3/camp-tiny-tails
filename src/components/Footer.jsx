@@ -28,7 +28,7 @@ export default function Footer() {
             <li><button onClick={() => scrollTo('about')}>Our Story</button></li>
             <li><button onClick={() => scrollTo('activities')}>Camp Life</button></li>
             <li><button onClick={() => scrollTo('pricing')}>Rates</button></li>
-            <li><Link to="/gallery">Gallery</Link></li>
+            <li><Link to="/gallery" onClick={() => window.scrollTo(0, 0)}>Gallery</Link></li>
           </ul>
         </div>
         <div>

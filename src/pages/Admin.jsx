@@ -10,18 +10,18 @@ export default function Admin() {
   const { user, signOut, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
-  const [bookings, setBookings]         = useState([])
-  const [clients, setClients]           = useState([])
+  const [bookings, setBookings] = useState([])
+  const [clients, setClients] = useState([])
   const [blockedDates, setBlockedDates] = useState([])
-  const [tab, setTab]                   = useState('Bookings')
-  const [loading, setLoading]           = useState(true)
-  const [message, setMessage]           = useState('')
+  const [tab, setTab] = useState('Bookings')
+  const [loading, setLoading] = useState(true)
+  const [message, setMessage] = useState('')
 
   // Block date range
-  const [blockFrom, setBlockFrom]     = useState('')
-  const [blockTo, setBlockTo]         = useState('')
+  const [blockFrom, setBlockFrom] = useState('')
+  const [blockTo, setBlockTo] = useState('')
   const [blockReason, setBlockReason] = useState('')
-  const [blocking, setBlocking]       = useState(false)
+  const [blocking, setBlocking] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -71,14 +71,14 @@ export default function Admin() {
     setBlocking(true)
     setMessage('')
 
-    const end   = blockTo || blockFrom  // if no end, just block one day
+    const end = blockTo || blockFrom  // if no end, just block one day
     const start = new Date(blockFrom)
-    const stop  = new Date(end)
-    const rows  = []
+    const stop = new Date(end)
+    const rows = []
 
     for (let d = new Date(start); d <= stop; d.setDate(d.getDate() + 1)) {
       rows.push({
-        date:   d.toISOString().split('T')[0],
+        date: d.toISOString().split('T')[0],
         reason: blockReason || 'Unavailable',
       })
     }
@@ -109,9 +109,9 @@ export default function Admin() {
 
   const removeBlockedRange = async () => {
     if (!blockFrom) { setMessage('Select a date range to unblock.'); return }
-    const end   = blockTo || blockFrom
+    const end = blockTo || blockFrom
     const start = new Date(blockFrom)
-    const stop  = new Date(end)
+    const stop = new Date(end)
     const dates = []
     for (let d = new Date(start); d <= stop; d.setDate(d.getDate() + 1)) {
       dates.push(d.toISOString().split('T')[0])
@@ -128,7 +128,7 @@ export default function Admin() {
 
   const statusColor = (status) => ({
     confirmed: 'var(--forest)', pending: 'var(--gold)',
-    cancelled: '#999',          completed: 'var(--sage)'
+    cancelled: '#999', completed: 'var(--sage)'
   }[status] || '#999')
 
   if (loading) return <div className="admin-loading">Loading... 🦴</div>
@@ -139,6 +139,22 @@ export default function Admin() {
   const revenue = bookings
     .filter(b => b.status === 'confirmed' || b.status === 'completed')
     .reduce((sum, b) => sum + (b.deposit_paid ? b.deposit_amount : 0), 0)
+
+  const markBalancePaid = async (id) => {
+    const { error } = await supabase
+      .from('bookings')
+      .update({
+        balance_paid: true,
+        balance_paid_at: new Date().toISOString()
+      })
+      .eq('id', id)
+    if (!error) {
+      setBookings(bookings.map(b =>
+        b.id === id ? { ...b, balance_paid: true } : b
+      ))
+      setMessage('Balance marked as paid!')
+    }
+  }
 
   return (
     <div className="admin-wrap">
@@ -192,9 +208,9 @@ export default function Admin() {
                     {b.profiles?.full_name} · {b.profiles?.email} · {b.profiles?.phone}
                   </div>
                   <div className="admin-booking-dates">
-                    {new Date(b.check_in + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })}
+                    {new Date(b.check_in + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     {' → '}
-                    {new Date(b.check_out + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
+                    {new Date(b.check_out + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     {' · '}{b.nights} night{b.nights > 1 ? 's' : ''}
                     {b.discount_applied ? ' · 10% off 🎉' : ''}
                   </div>
@@ -214,11 +230,28 @@ export default function Admin() {
                   {b.status === 'pending' && (
                     <button onClick={() => updateBookingStatus(b.id, 'confirmed')} className="btn-confirm">Confirm</button>
                   )}
-                  {(b.status === 'confirmed' || b.status === 'pending') && (
+
+                  {b.status === 'confirmed' && (
                     <>
                       <button onClick={() => updateBookingStatus(b.id, 'completed')} className="btn-complete">Complete</button>
                       <button onClick={() => updateBookingStatus(b.id, 'cancelled')} className="btn-admin-cancel">Cancel</button>
                     </>
+                  )}
+                  {b.status === 'pending' && (
+                    <button onClick={() => updateBookingStatus(b.id, 'cancelled')} className="btn-admin-cancel">Cancel</button>
+                  )}
+                 
+                  {b.status === 'completed' && !b.balance_paid && !b.paid_in_full && (
+                    <button
+                      onClick={() => markBalancePaid(b.id)}
+                      className="btn-balance"
+                    >
+                      Mark Balance Paid
+                    </button>
+                  )}
+
+                  {(b.balance_paid || b.paid_in_full) && (
+                    <span className="balance-paid-badge">✅ Fully paid</span>
                   )}
                 </div>
               </div>
@@ -313,7 +346,7 @@ export default function Admin() {
                 <div key={d.id} className="blocked-item">
                   <div>
                     <strong>
-                      {new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'long', day:'numeric', year:'numeric' })}
+                      {new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
                     </strong>
                     {d.reason && <span className="blocked-reason"> · {d.reason}</span>}
                   </div>
