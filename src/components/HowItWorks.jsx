@@ -5,7 +5,7 @@ const STEPS = [
   {
     num: '1',
     title: 'Book Your Dates',
-    desc: 'Reserve your spot and pay your deposit securely through Square Appointments.',
+    desc: 'Reserve your spot and pay your deposit securely through Stripe.',
     action: null,
   },
   {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import './Admin.css'
+import AdminCalendar from '../components/AdminCalendar'
 
 const ADMIN_EMAIL = 'stay@camptinytails.com' // 👈 your email
 
@@ -182,7 +183,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="admin-tabs">
-          {['Bookings', 'Clients', 'Block Dates'].map(t => (
+          {['Bookings', 'Calendar', 'Clients', 'Block Dates'].map(t => (
             <button
               key={t}
               className={`admin-tab ${tab === t ? 'active' : ''}`}
@@ -240,7 +241,7 @@ export default function Admin() {
                   {b.status === 'pending' && (
                     <button onClick={() => updateBookingStatus(b.id, 'cancelled')} className="btn-admin-cancel">Cancel</button>
                   )}
-                 
+
                   {b.status === 'completed' && !b.balance_paid && !b.paid_in_full && (
                     <button
                       onClick={() => markBalancePaid(b.id)}
@@ -258,6 +259,8 @@ export default function Admin() {
             ))}
           </div>
         )}
+
+        {tab === 'Calendar' && <AdminCalendar />}
 
         {/* ── CLIENTS ── */}
         {tab === 'Clients' && (

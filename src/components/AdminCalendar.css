@@ -1,0 +1,226 @@
+.admin-calendar {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  border: 2px solid var(--tan);
+  box-shadow: 4px 4px 0 var(--tan);
+  margin-bottom: 28px;
+}
+
+/* Header */
+.acal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.acal-title {
+  font-family: 'Rye', serif;
+  font-size: 1.3rem;
+  color: var(--forest);
+}
+
+.acal-nav {
+  background: var(--forest);
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.acal-nav:hover { background: var(--rust); }
+
+/* Legend */
+.acal-legend {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.acal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.acal-dot.available { background: #f0f7ed; border: 2px solid var(--sage); }
+.acal-dot.booked { background: #D4943A; }
+.acal-dot.blocked { background: #555; }
+.acal-dot.today-dot { background: var(--gold); }
+
+/* Grid */
+.acal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.acal-day-label {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #aaa;
+  padding: 4px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.acal-cell {
+  border-radius: 8px;
+  padding: 6px 4px;
+  min-height: 56px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: 2px solid transparent;
+}
+
+.acal-cell:hover:not(.empty) { opacity: 0.85; transform: scale(1.04); }
+.acal-cell.empty { cursor: default; }
+
+.acal-cell.available {
+  background: #f0f7ed;
+  border-color: transparent;
+}
+
+.acal-cell.available:hover { border-color: var(--sage); }
+
+.acal-cell.booked {
+  background: #D4943A;
+  color: white;
+}
+
+.acal-cell.blocked {
+  background: #444;
+  color: white;
+}
+
+.acal-cell.is-today {
+  border-color: var(--gold) !important;
+  border-width: 2px;
+}
+
+.acal-cell.is-selected {
+  border-color: var(--rust) !important;
+  border-width: 2px;
+  transform: scale(1.04);
+}
+
+.acal-date-num {
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.acal-cell.available .acal-date-num { color: #555; }
+.acal-cell.booked .acal-date-num { color: #000; }
+.acal-cell.blocked .acal-date-num { color: #ccc; }
+
+.acal-cell-name {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--tan);
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.acal-cell-reason {
+  font-size: 0.62rem;
+  color: #aaa;
+  text-align: center;
+}
+
+/* Detail panel */
+.acal-detail {
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin-top: 4px;
+  border: 2px solid var(--tan);
+}
+
+.acal-detail.available { background: #f0f7ed; border-color: var(--sage); }
+.acal-detail.booked { background: #f0f5ea; border-color: var(--forest); }
+.acal-detail.blocked { background: #f5f5f5; border-color: #aaa; }
+
+.acal-detail-date {
+  font-family: 'Rye', serif;
+  font-size: 1rem;
+  color: var(--forest);
+  margin-bottom: 12px;
+}
+
+.acal-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acal-detail-status {
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.acal-detail-status.available { color: var(--sage); }
+.acal-detail-status.booked { color: var(--forest); }
+.acal-detail-status.blocked { color: #555; }
+
+.acal-detail-reason {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+.acal-detail-booking {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.acal-detail-row {
+  font-size: 0.85rem;
+  color: #444;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.acal-detail-row strong {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+}
+
+.acal-loading {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+  font-family: 'Rye', serif;
+}
+
+@media (max-width: 640px) {
+  .acal-cell { min-height: 44px; }
+  .acal-cell-name { display: none; }
+  .acal-detail-booking { grid-template-columns: 1fr; }
+}
