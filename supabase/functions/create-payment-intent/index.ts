@@ -11,7 +11,6 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -23,11 +22,20 @@ Deno.serve(async (req) => {
       throw new Error('Missing required fields')
     }
 
+    // Create or retrieve Stripe customer
+    const customers = await stripe.customers.list({ email: customerEmail, limit: 1 })
+    let customer
+    if (customers.data.length > 0) {
+      customer = customers.data[0]
+    } else {
+      customer = await stripe.customers.create({ email: customerEmail })
+    }
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
-      customer_email: customerEmail,
+      customer: customer.id,
       line_items: [
         {
           price_data: {
@@ -35,9 +43,8 @@ Deno.serve(async (req) => {
             product_data: {
               name: 'Camp Tiny Tails',
               description,
-              images: [],
             },
-            unit_amount: Math.round(amount * 100), // Stripe uses cents
+            unit_amount: Math.round(amount * 100),
           },
           quantity: 1,
         },
@@ -46,8 +53,8 @@ Deno.serve(async (req) => {
         bookingId,
         paymentType,
       },
-      success_url: `${req.headers.get('origin')}/account#booking=success`,
-      cancel_url:  `${req.headers.get('origin')}/payment?booking=${bookingId}`,
+      success_url: `${req.headers.get('origin')}/account?booking=success`,
+      cancel_url:  `${req.headers.get('origin')}/booking`,
     })
 
     return new Response(

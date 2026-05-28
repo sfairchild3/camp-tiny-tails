@@ -26,7 +26,6 @@ Deno.serve(async (req) => {
     const signature = req.headers.get('stripe-signature') ?? ''
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? ''
 
-    // Verify webhook signature
     let event
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
@@ -35,22 +34,22 @@ Deno.serve(async (req) => {
     }
 
     if (event.type === 'checkout.session.completed') {
-      const session    = event.data.object
-      const bookingId  = session.metadata?.bookingId
+      const session     = event.data.object
+      const bookingId   = session.metadata?.bookingId
       const paymentType = session.metadata?.paymentType
 
       if (!bookingId) throw new Error('No booking ID in session metadata')
 
       const isPaidInFull = paymentType === 'full'
 
-      // Update booking in Supabase
       const { error } = await supabase
         .from('bookings')
         .update({
-          deposit_paid:              true,
-          paid_in_full:              isPaidInFull,
-          status:                    'confirmed',
-          stripe_payment_intent_id:  session.payment_intent,
+          deposit_paid:             true,
+          paid_in_full:             isPaidInFull,
+          status:                   'confirmed',
+          stripe_payment_intent_id: session.payment_intent,
+          stripe_customer_id:       session.customer,
         })
         .eq('id', bookingId)
 
@@ -60,11 +59,25 @@ Deno.serve(async (req) => {
     if (event.type === 'checkout.session.expired') {
       const session   = event.data.object
       const bookingId = session.metadata?.bookingId
-
       if (bookingId) {
         await supabase
           .from('bookings')
           .update({ status: 'cancelled' })
+          .eq('id', bookingId)
+      }
+    }
+
+    // Invoice paid — mark balance paid
+    if (event.type === 'invoice.paid') {
+      const invoice   = event.data.object
+      const bookingId = invoice.metadata?.bookingId
+      if (bookingId) {
+        await supabase
+          .from('bookings')
+          .update({
+            balance_paid:    true,
+            balance_paid_at: new Date().toISOString(),
+          })
           .eq('id', bookingId)
       }
     }
