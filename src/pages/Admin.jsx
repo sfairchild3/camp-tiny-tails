@@ -17,6 +17,7 @@ export default function Admin() {
   const [tab, setTab] = useState('Bookings')
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
 
   // Block date range
   const [blockFrom, setBlockFrom] = useState('')
@@ -56,13 +57,32 @@ export default function Admin() {
   }
 
   const updateBookingStatus = async (id, status) => {
+    setError('')
+    setMessage('')
+
+    // When completing a deposit-only booking → send invoice automatically
+    if (status === 'completed') {
+      const booking = bookings.find(b => b.id === id)
+      if (booking && !booking.paid_in_full && !booking.balance_paid) {
+        const { error: fnError } = await supabase.functions.invoke('create-invoice', {
+          body: { bookingId: id }
+        })
+        if (fnError) {
+          setError(`Could not send invoice: ${fnError.message}`)
+          return
+        }
+        setMessage('Booking completed and invoice sent to client! 🦴')
+      }
+    }
+
     const { error } = await supabase
       .from('bookings')
       .update({ status })
       .eq('id', id)
+
     if (!error) {
       setBookings(bookings.map(b => b.id === id ? { ...b, status } : b))
-      setMessage(`Booking ${status}.`)
+      if (status !== 'completed') setMessage(`Booking ${status}.`)
     }
   }
 
@@ -180,6 +200,7 @@ export default function Admin() {
         </div>
 
         {message && <div className="admin-message">{message}</div>}
+        {error && <div className="admin-error">{error}</div>}
 
         {/* Tabs */}
         <div className="admin-tabs">
