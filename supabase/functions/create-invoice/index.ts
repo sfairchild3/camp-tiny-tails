@@ -1,4 +1,4 @@
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
+import Stripe from 'https://esm.sh/stripe@12.18.0?target=deno&no-check'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
@@ -25,14 +25,9 @@ Deno.serve(async (req) => {
     const { bookingId } = await req.json()
     if (!bookingId) throw new Error('Missing bookingId')
 
-    // Fetch full booking details including dogs and profile
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .select(`
-        *,
-        profiles(full_name, email),
-        dogs(name)
-      `)
+      .select(`*, profiles(full_name, email), dogs(name)`)
       .eq('id', bookingId)
       .single()
 
@@ -43,17 +38,23 @@ Deno.serve(async (req) => {
     const balanceDue = booking.subtotal - booking.deposit_amount
     if (balanceDue <= 0) throw new Error('No balance due')
 
-    // Format dates
-    const checkIn  = new Date(booking.check_in + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    console.log('Booking found:', JSON.stringify({
+      id: booking.id,
+      subtotal: booking.subtotal,
+      deposit_amount: booking.deposit_amount,
+      paid_in_full: booking.paid_in_full,
+      balance_paid: booking.balance_paid,
+      stripe_customer_id: booking.stripe_customer_id,
+      profile_email: booking.profiles?.email,
+      dog_name: booking.dogs?.name
+    }))
+    console.log('Balance due:', balanceDue)
+
+    const checkIn = new Date(booking.check_in + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     const checkOut = new Date(booking.check_out + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-
-    // Dog names
     const dogNames = booking.dogs?.name || 'your pup'
-
-    // Invoice description
     const description = `Camp Tiny Tails Balance Due for ${dogNames} — ${checkIn} to ${checkOut}`
 
-    // Get or create Stripe customer
     const customerEmail = booking.profiles?.email
     if (!customerEmail) throw new Error('No customer email found')
 
@@ -71,39 +72,37 @@ Deno.serve(async (req) => {
         customerId = customer.id
       }
 
-      // Save customer ID to booking
       await supabase
         .from('bookings')
         .update({ stripe_customer_id: customerId })
         .eq('id', bookingId)
     }
 
-    // Create invoice item
-    await stripe.invoiceItems.create({
-      customer: customerId,
-      amount: Math.round(balanceDue * 100),
-      currency: 'usd',
-      description,
-    })
-
-    // Create and send invoice automatically
+    // 1. Create invoice FIRST
     const invoice = await stripe.invoices.create({
       customer: customerId,
-      auto_advance: true,  // auto-finalize
       collection_method: 'send_invoice',
       days_until_due: 7,
       metadata: { bookingId },
       footer: 'Thank you for staying at Camp Tiny Tails! 🦴',
     })
 
-    // Send it immediately
-    await stripe.invoices.sendInvoice(invoice.id)
+    // 2. Create item attached to THAT specific invoice only
+    await stripe.invoiceItems.create({
+      customer: customerId,
+      invoice: invoice.id, 
+      amount: Math.round(balanceDue * 100),
+      currency: 'usd',
+      description,
+    })
+
+    // 3. Finalize
+    await stripe.invoices.finalizeInvoice(invoice.id)
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         invoiceId: invoice.id,
-        invoiceUrl: invoice.hosted_invoice_url,
         amount: balanceDue,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

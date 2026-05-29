@@ -1,4 +1,4 @@
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
+import Stripe from 'https://esm.sh/stripe@12.18.0?target=deno&no-check'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
@@ -22,20 +22,24 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body      = await req.text()
+    const body = await req.text()
     const signature = req.headers.get('stripe-signature') ?? ''
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? ''
+    const webhookSecret = Deno.env.get(
+      req.headers.get('stripe-livemode') === 'true'
+        ? 'STRIPE_WEBHOOK_SECRET'
+        : 'STRIPE_WEBHOOK_SECRET_TEST'
+    ) ?? ''
 
     let event
     try {
-      event = await stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
     } catch (err) {
       return new Response(`Webhook signature verification failed: ${err.message}`, { status: 400 })
     }
 
     if (event.type === 'checkout.session.completed') {
-      const session     = event.data.object
-      const bookingId   = session.metadata?.bookingId
+      const session = event.data.object
+      const bookingId = session.metadata?.bookingId
       const paymentType = session.metadata?.paymentType
 
       if (!bookingId) throw new Error('No booking ID in session metadata')
@@ -45,11 +49,11 @@ Deno.serve(async (req) => {
       const { error } = await supabase
         .from('bookings')
         .update({
-          deposit_paid:             true,
-          paid_in_full:             isPaidInFull,
-          status:                   'confirmed',
+          deposit_paid: true,
+          paid_in_full: isPaidInFull,
+          status: 'confirmed',
           stripe_payment_intent_id: session.payment_intent,
-          stripe_customer_id:       session.customer,
+          stripe_customer_id: session.customer,
         })
         .eq('id', bookingId)
 
@@ -57,7 +61,7 @@ Deno.serve(async (req) => {
     }
 
     if (event.type === 'checkout.session.expired') {
-      const session   = event.data.object
+      const session = event.data.object
       const bookingId = session.metadata?.bookingId
       if (bookingId) {
         await supabase
@@ -69,13 +73,13 @@ Deno.serve(async (req) => {
 
     // Invoice paid — mark balance paid
     if (event.type === 'invoice.paid') {
-      const invoice   = event.data.object
+      const invoice = event.data.object
       const bookingId = invoice.metadata?.bookingId
       if (bookingId) {
         await supabase
           .from('bookings')
           .update({
-            balance_paid:    true,
+            balance_paid: true,
             balance_paid_at: new Date().toISOString(),
           })
           .eq('id', bookingId)
