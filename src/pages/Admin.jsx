@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import './Admin.css'
-import AdminCalendar from '../components/AdminCalendar'
 
 const ADMIN_EMAIL = 'stay@camptinytails.com' // 👈 your email
 
@@ -11,19 +10,23 @@ export default function Admin() {
   const { user, signOut, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
-  const [bookings, setBookings] = useState([])
-  const [clients, setClients] = useState([])
+  const [bookings, setBookings]         = useState([])
+  const [clients, setClients]           = useState([])
   const [blockedDates, setBlockedDates] = useState([])
-  const [tab, setTab] = useState('Bookings')
-  const [loading, setLoading] = useState(true)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
+  const [tab, setTab]                   = useState('Bookings')
+  const [loading, setLoading]           = useState(true)
+  const [message, setMessage]           = useState('')
+
+  // Decline modal
+  const [declineModal, setDeclineModal] = useState(null) // bookingId or null
+  const [declineReason, setDeclineReason] = useState('')
+  const [actioning, setActioning]       = useState(false)
 
   // Block date range
-  const [blockFrom, setBlockFrom] = useState('')
-  const [blockTo, setBlockTo] = useState('')
+  const [blockFrom, setBlockFrom]     = useState('')
+  const [blockTo, setBlockTo]         = useState('')
   const [blockReason, setBlockReason] = useState('')
-  const [blocking, setBlocking] = useState(false)
+  const [blocking, setBlocking]       = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -56,69 +59,92 @@ export default function Admin() {
     setLoading(false)
   }
 
-  const updateBookingStatus = async (id, status) => {
-    setError('')
+  // ── APPROVE ──────────────────────────────────────────
+  const handleApprove = async (bookingId) => {
+    setActioning(true)
     setMessage('')
-
-    // When completing a deposit-only booking → send invoice automatically
-    if (status === 'completed') {
-      const booking = bookings.find(b => b.id === id)
-      if (booking && !booking.paid_in_full && !booking.balance_paid) {
-        const { error: fnError } = await supabase.functions.invoke('create-invoice', {
-          body: { bookingId: id }
-        })
-        if (fnError) {
-          setError(`Could not send invoice: ${fnError.message}`)
-          return
-        }
-        setMessage('Booking completed and invoice sent to client! 🦴')
-      }
-    }
-
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status })
-      .eq('id', id)
-
-    if (!error) {
-      setBookings(bookings.map(b => b.id === id ? { ...b, status } : b))
-      if (status !== 'completed') setMessage(`Booking ${status}.`)
+    try {
+      const { error } = await supabase.functions.invoke('send-approval', {
+        body: { bookingId }
+      })
+      if (error) throw error
+      setMessage('Booking approved! Payment link sent to client.')
+      setBookings(bookings.map(b =>
+        b.id === bookingId ? { ...b, status: 'approved' } : b
+      ))
+    } catch (err) {
+      setMessage(`Error: ${err.message}`)
+    } finally {
+      setActioning(false)
     }
   }
 
-  // ── BLOCK DATE RANGE ──────────────────────────────
+  // ── DECLINE ──────────────────────────────────────────
+  const handleDecline = async () => {
+    if (!declineModal) return
+    setActioning(true)
+    setMessage('')
+    try {
+      const { error } = await supabase.functions.invoke('send-decline', {
+        body: { bookingId: declineModal, reason: declineReason }
+      })
+      if (error) throw error
+      setMessage('Booking declined. Client has been notified.')
+      setBookings(bookings.map(b =>
+        b.id === declineModal ? { ...b, status: 'declined', decline_reason: declineReason } : b
+      ))
+      setDeclineModal(null)
+      setDeclineReason('')
+    } catch (err) {
+      setMessage(`Error: ${err.message}`)
+    } finally {
+      setActioning(false)
+    }
+  }
+
+  // ── OTHER STATUS UPDATES ─────────────────────────────
+  const updateBookingStatus = async (id, status) => {
+    const { error } = await supabase.from('bookings').update({ status }).eq('id', id)
+    if (!error) {
+      setBookings(bookings.map(b => b.id === id ? { ...b, status } : b))
+      setMessage(`Booking ${status}.`)
+    }
+  }
+
+  // ── SEND INVOICE ─────────────────────────────────────
+  const handleSendInvoice = async (bookingId) => {
+    setActioning(true)
+    try {
+      const { error } = await supabase.functions.invoke('create-invoice', {
+        body: { bookingId }
+      })
+      if (error) throw error
+      setMessage('Invoice sent to client!')
+    } catch (err) {
+      setMessage(`Error: ${err.message}`)
+    } finally {
+      setActioning(false)
+    }
+  }
+
+  // ── BLOCK DATES ──────────────────────────────────────
   const addBlockedRange = async () => {
     if (!blockFrom) { setMessage('Please select a start date.'); return }
     setBlocking(true)
     setMessage('')
-
-    const end = blockTo || blockFrom  // if no end, just block one day
+    const end   = blockTo || blockFrom
     const start = new Date(blockFrom)
-    const stop = new Date(end)
-    const rows = []
-
+    const stop  = new Date(end)
+    const rows  = []
     for (let d = new Date(start); d <= stop; d.setDate(d.getDate() + 1)) {
-      rows.push({
-        date: d.toISOString().split('T')[0],
-        reason: blockReason || 'Unavailable',
-      })
+      rows.push({ date: d.toISOString().split('T')[0], reason: blockReason || 'Unavailable' })
     }
-
-    // Upsert so duplicates don't error
-    const { error } = await supabase
-      .from('blocked_dates')
-      .upsert(rows, { onConflict: 'date' })
-
+    const { error } = await supabase.from('blocked_dates').upsert(rows, { onConflict: 'date' })
     if (!error) {
-      const count = rows.length
-      setMessage(`${count} date${count > 1 ? 's' : ''} blocked successfully.`)
-      setBlockFrom('')
-      setBlockTo('')
-      setBlockReason('')
+      setMessage(`${rows.length} date(s) blocked.`)
+      setBlockFrom(''); setBlockTo(''); setBlockReason('')
       fetchAll()
-    } else {
-      setMessage(`Error: ${error.message}`)
-    }
+    } else { setMessage(`Error: ${error.message}`) }
     setBlocking(false)
   }
 
@@ -129,58 +155,70 @@ export default function Admin() {
   }
 
   const removeBlockedRange = async () => {
-    if (!blockFrom) { setMessage('Select a date range to unblock.'); return }
-    const end = blockTo || blockFrom
-    const start = new Date(blockFrom)
-    const stop = new Date(end)
+    if (!blockFrom) return
+    const end   = blockTo || blockFrom
     const dates = []
-    for (let d = new Date(start); d <= stop; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(blockFrom); d <= new Date(end); d.setDate(d.getDate() + 1)) {
       dates.push(d.toISOString().split('T')[0])
     }
-    const { error } = await supabase
-      .from('blocked_dates')
-      .delete()
-      .in('date', dates)
-    if (!error) {
-      setMessage(`${dates.length} date(s) unblocked.`)
-      fetchAll()
-    }
+    await supabase.from('blocked_dates').delete().in('date', dates)
+    setMessage(`${dates.length} date(s) unblocked.`)
+    fetchAll()
   }
 
   const statusColor = (status) => ({
-    confirmed: 'var(--forest)', pending: 'var(--gold)',
-    cancelled: '#999', completed: 'var(--sage)'
+    pending_approval: '#D4943A',
+    approved:         '#7BBFCF',
+    confirmed:        '#2D5016',
+    completed:        '#7A9E5A',
+    cancelled:        '#999',
+    declined:         '#999',
   }[status] || '#999')
+
+  const statusLabel = (status) => ({
+    pending_approval: 'Pending Approval',
+    approved:         'Awaiting Payment',
+    confirmed:        'Confirmed',
+    completed:        'Completed',
+    cancelled:        'Cancelled',
+    declined:         'Declined',
+  }[status] || status)
 
   if (loading) return <div className="admin-loading">Loading... 🦴</div>
 
-  const upcoming = bookings.filter(b =>
-    b.status !== 'cancelled' && new Date(b.check_in) >= new Date()
-  )
-  const revenue = bookings
+  const pendingApproval = bookings.filter(b => b.status === 'pending_approval')
+  const upcoming = bookings.filter(b => b.status === 'confirmed' && new Date(b.check_in) >= new Date())
+  const revenue  = bookings
     .filter(b => b.status === 'confirmed' || b.status === 'completed')
     .reduce((sum, b) => sum + (b.deposit_paid ? b.deposit_amount : 0), 0)
 
-  const markBalancePaid = async (id) => {
-    const { error } = await supabase
-      .from('bookings')
-      .update({
-        balance_paid: true,
-        balance_paid_at: new Date().toISOString()
-      })
-      .eq('id', id)
-    if (!error) {
-      setBookings(bookings.map(b =>
-        b.id === id ? { ...b, balance_paid: true } : b
-      ))
-      setMessage('Balance marked as paid!')
-    }
-  }
-
   return (
     <div className="admin-wrap">
-      <div className="container">
+      {/* Decline modal */}
+      {declineModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h3>Decline Booking</h3>
+            <p>Optionally add a message for the client explaining why their request was declined.</p>
+            <textarea
+              value={declineReason}
+              onChange={e => setDeclineReason(e.target.value)}
+              placeholder="e.g. Unfortunately those dates are already booked. Please try selecting different dates!"
+              rows={4}
+            />
+            <div className="modal-actions">
+              <button onClick={handleDecline} className="btn-confirm" disabled={actioning}>
+                {actioning ? 'Sending...' : 'Send Decline'}
+              </button>
+              <button onClick={() => { setDeclineModal(null); setDeclineReason('') }} className="btn-admin-cancel">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
+      <div className="container">
         <div className="admin-header">
           <div>
             <span className="section-label">Admin</span>
@@ -193,24 +231,37 @@ export default function Admin() {
 
         {/* Stats */}
         <div className="admin-stats">
+          <div className="stat-card">
+            <div className="stat-num" style={{ color: pendingApproval.length > 0 ? 'var(--rust)' : 'var(--forest)' }}>
+              {pendingApproval.length}
+            </div>
+            <div className="stat-label">Awaiting Approval</div>
+          </div>
           <div className="stat-card"><div className="stat-num">{upcoming.length}</div><div className="stat-label">Upcoming Stays</div></div>
           <div className="stat-card"><div className="stat-num">{clients.length}</div><div className="stat-label">Total Clients</div></div>
           <div className="stat-card"><div className="stat-num">${revenue.toFixed(0)}</div><div className="stat-label">Deposits Collected</div></div>
-          <div className="stat-card"><div className="stat-num">{blockedDates.length}</div><div className="stat-label">Blocked Dates</div></div>
         </div>
 
         {message && <div className="admin-message">{message}</div>}
-        {error && <div className="admin-error">{error}</div>}
+
+        {/* Pending approval banner */}
+        {pendingApproval.length > 0 && (
+          <div className="pending-banner">
+            🦴 You have <strong>{pendingApproval.length}</strong> booking request{pendingApproval.length > 1 ? 's' : ''} waiting for your approval!
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="admin-tabs">
-          {['Bookings', 'Calendar', 'Clients', 'Block Dates'].map(t => (
+          {['Bookings', 'Clients', 'Block Dates'].map(t => (
             <button
               key={t}
               className={`admin-tab ${tab === t ? 'active' : ''}`}
               onClick={() => { setTab(t); setMessage('') }}
             >
-              {t}
+              {t}{t === 'Bookings' && pendingApproval.length > 0 && (
+                <span className="tab-badge">{pendingApproval.length}</span>
+              )}
             </button>
           ))}
         </div>
@@ -220,7 +271,7 @@ export default function Admin() {
           <div>
             {bookings.length === 0 && <p className="empty-msg">No bookings yet.</p>}
             {bookings.map(b => (
-              <div key={b.id} className="admin-booking-card">
+              <div key={b.id} className={`admin-booking-card ${b.status === 'pending_approval' ? 'pending' : ''}`}>
                 <div className="admin-booking-main">
                   <div className="admin-booking-dog">
                     🦴 <strong>{b.dogs?.name}</strong> ({b.dogs?.breed})
@@ -230,9 +281,9 @@ export default function Admin() {
                     {b.profiles?.full_name} · {b.profiles?.email} · {b.profiles?.phone}
                   </div>
                   <div className="admin-booking-dates">
-                    {new Date(b.check_in + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {new Date(b.check_in + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })}
                     {' → '}
-                    {new Date(b.check_out + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {new Date(b.check_out + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
                     {' · '}{b.nights} night{b.nights > 1 ? 's' : ''}
                     {b.discount_applied ? ' · 10% off 🎉' : ''}
                   </div>
@@ -244,44 +295,55 @@ export default function Admin() {
                       {b.deposit_paid ? `$${b.deposit_amount} paid` : 'Not paid'}
                     </strong>
                   </div>
+                  {b.decline_reason && (
+                    <div className="decline-reason-note">Decline reason: {b.decline_reason}</div>
+                  )}
                 </div>
                 <div className="admin-booking-actions">
                   <div className="admin-status" style={{ color: statusColor(b.status) }}>
-                    {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
+                    {statusLabel(b.status)}
                   </div>
-                  {b.status === 'pending' && (
-                    <button onClick={() => updateBookingStatus(b.id, 'confirmed')} className="btn-confirm">Confirm</button>
-                  )}
 
-                  {b.status === 'confirmed' && (
+                  {/* Pending approval actions */}
+                  {b.status === 'pending_approval' && (
                     <>
-                      <button onClick={() => updateBookingStatus(b.id, 'completed')} className="btn-complete">Complete</button>
-                      <button onClick={() => updateBookingStatus(b.id, 'cancelled')} className="btn-admin-cancel">Cancel</button>
+                      <button onClick={() => handleApprove(b.id)} className="btn-approve" disabled={actioning}>
+                        ✅ Approve
+                      </button>
+                      <button onClick={() => setDeclineModal(b.id)} className="btn-admin-cancel" disabled={actioning}>
+                        ❌ Decline
+                      </button>
                     </>
                   )}
-                  {b.status === 'pending' && (
-                    <button onClick={() => updateBookingStatus(b.id, 'cancelled')} className="btn-admin-cancel">Cancel</button>
+
+                  {/* Confirmed actions */}
+                  {b.status === 'confirmed' && (
+                    <>
+                      {!b.paid_in_full && !b.balance_paid && (
+                        <button onClick={() => handleSendInvoice(b.id)} className="btn-complete" disabled={actioning}>
+                          Send Invoice
+                        </button>
+                      )}
+                      <button onClick={() => updateBookingStatus(b.id, 'completed')} className="btn-complete" disabled={actioning}>
+                        Complete
+                      </button>
+                      <button onClick={() => updateBookingStatus(b.id, 'cancelled')} className="btn-admin-cancel" disabled={actioning}>
+                        Cancel
+                      </button>
+                    </>
                   )}
 
-                  {b.status === 'completed' && !b.balance_paid && !b.paid_in_full && (
-                    <button
-                      onClick={() => markBalancePaid(b.id)}
-                      className="btn-balance"
-                    >
-                      Mark Balance Paid
+                  {/* Approved awaiting payment */}
+                  {b.status === 'approved' && (
+                    <button onClick={() => handleApprove(b.id)} className="btn-complete" disabled={actioning}>
+                      Resend Payment Link
                     </button>
-                  )}
-
-                  {(b.balance_paid || b.paid_in_full) && (
-                    <span className="balance-paid-badge">✅ Fully paid</span>
                   )}
                 </div>
               </div>
             ))}
           </div>
         )}
-
-        {tab === 'Calendar' && <AdminCalendar />}
 
         {/* ── CLIENTS ── */}
         {tab === 'Clients' && (
@@ -321,57 +383,32 @@ export default function Admin() {
             <div className="block-form">
               <h3>Block a Date or Range</h3>
               <p>Pick a single date or a from/to range. All dates in between will be marked unavailable on the booking calendar.</p>
-
               <div className="block-range-inputs">
                 <div className="block-field">
                   <label>From</label>
-                  <input
-                    type="date"
-                    value={blockFrom}
-                    onChange={e => setBlockFrom(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
+                  <input type="date" value={blockFrom} onChange={e => setBlockFrom(e.target.value)} min={new Date().toISOString().split('T')[0]} />
                 </div>
                 <div className="block-field">
-                  <label>To (optional — leave blank for single day)</label>
-                  <input
-                    type="date"
-                    value={blockTo}
-                    onChange={e => setBlockTo(e.target.value)}
-                    min={blockFrom || new Date().toISOString().split('T')[0]}
-                  />
+                  <label>To (optional)</label>
+                  <input type="date" value={blockTo} onChange={e => setBlockTo(e.target.value)} min={blockFrom || new Date().toISOString().split('T')[0]} />
                 </div>
                 <div className="block-field block-field-reason">
                   <label>Reason (optional)</label>
-                  <input
-                    type="text"
-                    value={blockReason}
-                    onChange={e => setBlockReason(e.target.value)}
-                    placeholder="e.g. Vacation, Personal day"
-                  />
+                  <input type="text" value={blockReason} onChange={e => setBlockReason(e.target.value)} placeholder="e.g. Vacation, Personal day" />
                 </div>
               </div>
-
               <div className="block-actions">
-                <button onClick={addBlockedRange} className="btn-block" disabled={blocking}>
-                  {blocking ? 'Blocking...' : 'Block Dates'}
-                </button>
-                <button onClick={removeBlockedRange} className="btn-unblock-range" disabled={blocking}>
-                  Unblock This Range
-                </button>
+                <button onClick={addBlockedRange} className="btn-block" disabled={blocking}>{blocking ? 'Blocking...' : 'Block Dates'}</button>
+                <button onClick={removeBlockedRange} className="btn-unblock-range" disabled={blocking}>Unblock This Range</button>
               </div>
             </div>
-
-            {/* Blocked dates list — grouped by month */}
             <div className="blocked-list">
               <h3>Currently Blocked ({blockedDates.length} date{blockedDates.length !== 1 ? 's' : ''})</h3>
               {blockedDates.length === 0 && <p className="empty-msg">No dates blocked.</p>}
               {blockedDates.map(d => (
                 <div key={d.id} className="blocked-item">
                   <div>
-                    <strong>
-                      {new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
-                    </strong>
+                    <strong>{new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'long', day:'numeric', year:'numeric' })}</strong>
                     {d.reason && <span className="blocked-reason"> · {d.reason}</span>}
                   </div>
                   <button onClick={() => removeBlockedDate(d.id)} className="btn-unblock">Unblock</button>
@@ -380,7 +417,6 @@ export default function Admin() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   )

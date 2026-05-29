@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { calculateBooking, BASE_NIGHTLY_RATE, EXTRA_DOG_RATE } from '../lib/stripe'
 import { useAuth } from '../lib/AuthContext'
@@ -8,25 +8,20 @@ import './Booking.css'
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-
-
 export default function Booking() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const [blockedDates, setBlockedDates] = useState([])
   const [bookedDates, setBookedDates] = useState([])
+  const [checkIn, setCheckIn] = useState(null)
+  const [checkOut, setCheckOut] = useState(null)
   const [selecting, setSelecting] = useState('checkin')
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
-  const [checkIn, setCheckIn] = useState(location.state?.checkIn || null)
-  const [checkOut, setCheckOut] = useState(location.state?.checkOut || null)
-
-
-  // Dog selection
   const [dogs, setDogs] = useState([])
   const [selectedDogs, setSelectedDogs] = useState([])
 
@@ -45,21 +40,19 @@ export default function Booking() {
   }, [checkIn, checkOut, selectedDogs])
 
   const fetchUnavailableDates = async () => {
-    const { data: blocked } = await supabase
-      .from('blocked_dates')
-      .select('date')
+    const { data: blocked } = await supabase.from('blocked_dates').select('date')
     setBlockedDates(blocked?.map(b => b.date) || [])
 
     const { data: bookings } = await supabase
       .from('bookings')
       .select('check_in, check_out')
-      .in('status', ['confirmed', 'pending'])
+      .in('status', ['confirmed', 'pending_approval', 'approved'])
 
     const dates = []
     bookings?.forEach(b => {
       const start = new Date(b.check_in)
       const end = new Date(b.check_out)
-      for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         dates.push(d.toISOString().split('T')[0])
       }
     })
@@ -73,19 +66,16 @@ export default function Booking() {
       .eq('owner_id', user.id)
       .order('created_at', { ascending: true })
     setDogs(data || [])
-    // Auto-select the first dog
     if (data && data.length > 0) setSelectedDogs([data[0].id])
   }
 
   const toggleDog = (dogId) => {
     setSelectedDogs(prev => {
       if (prev.includes(dogId)) {
-        // Don't allow deselecting if it's the only one selected
         if (prev.length === 1) return prev
         return prev.filter(id => id !== dogId)
-      } else {
-        return [...prev, dogId]
       }
+      return [...prev, dogId]
     })
   }
 
@@ -106,14 +96,43 @@ export default function Booking() {
   const handleDateClick = (date) => {
     if (isPast(date) || isUnavailable(date)) return
     const dateStr = date.toISOString().split('T')[0]
+
     if (selecting === 'checkin') {
-      setCheckIn(dateStr); setCheckOut(null); setSelecting('checkout')
+      setCheckIn(dateStr)
+      setCheckOut(null)
+      setSelecting('checkout')
     } else {
-      if (dateStr <= checkIn) { setCheckIn(dateStr); setCheckOut(null) }
-      else { setCheckOut(dateStr); setSelecting('checkin') }
+      if (dateStr <= checkIn) {
+        setCheckIn(dateStr)
+        setCheckOut(null)
+        return
+      }
+
+      // Check if any date in the range is unavailable
+      const start = new Date(checkIn)
+      const end = new Date(dateStr)
+      let hasConflict = false
+
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        if (isUnavailable(d)) {
+          hasConflict = true
+          break
+        }
+      }
+
+      if (hasConflict) {
+        setError('Your selected dates overlap an existing booking or unavailable date. Please choose different dates.')
+        setCheckIn(null)
+        setCheckOut(null)
+        setSelecting('checkin')
+        return
+      }
+
+      setError('')
+      setCheckOut(dateStr)
+      setSelecting('checkin')
     }
   }
-
   const getDaysInMonth = (date) => {
     const year = date.getFullYear(), month = date.getMonth()
     return {
@@ -126,13 +145,18 @@ export default function Booking() {
   const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
 
-  const handleBook = async () => {
-    if (!user) { navigate('/login', { state: { from: '/booking' } }); return }
+  const handleSubmitRequest = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: '/booking' } })
+      return
+    }
     if (!checkIn || !checkOut || !summary) return
 
-    setLoading(true); setError('')
+    setLoading(true)
+    setError('')
 
     try {
+      // If no dog profile yet send them to set one up first
       if (dogs.length === 0) {
         navigate('/account', { state: { setupDog: true, checkIn, checkOut } })
         return
@@ -140,6 +164,7 @@ export default function Booking() {
 
       const bookedDogIds = selectedDogs.length > 0 ? selectedDogs : [dogs[0].id]
 
+      // Create booking with pending_approval status
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -153,14 +178,20 @@ export default function Booking() {
           discount_applied: summary.discountApplied,
           subtotal: summary.subtotal,
           deposit_amount: summary.depositAmount,
-          status: 'pending',
+          status: 'pending_approval',
         })
         .select()
         .single()
 
       if (bookingError) throw bookingError
 
-      navigate('/payment', { state: { booking, summary } })
+      // Send notification email to admin
+      await supabase.functions.invoke('send-booking-request', {
+        body: { bookingId: booking.id }
+      })
+
+      setSuccess(true)
+
     } catch (err) {
       setError(err.message)
     } finally {
@@ -170,15 +201,32 @@ export default function Booking() {
 
   const { firstDay, daysInMonth, year, month } = getDaysInMonth(currentMonth)
 
+  // Success state
+  if (success) {
+    return (
+      <div className="booking-wrap">
+        <div className="container">
+          <div className="booking-success">
+            <div className="success-icon">🦴</div>
+            <h2>Request Sent!</h2>
+            <p>Your booking request has been sent to Camp Tiny Tails. You'll receive an email once your request is reviewed — usually within 24 hours.</p>
+            <p className="success-sub">If approved you'll receive a link to pay your deposit and confirm your spot.</p>
+            <button onClick={() => navigate('/account')} className="btn-primary">View My Bookings</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="booking-wrap">
       <div className="container">
         <div className="booking-header">
           <span className="section-label">Reserve Your Spot</span>
-          <h1 className="section-title">Book a Stay at Camp</h1>
+          <h1 className="section-title">Request a Stay at Camp</h1>
           <p className="booking-section-body">
-            Select your check-in and check-out dates. Stays of 5+ nights get 10% off automatically.
-            Bringing a second dog? Just <strong>+${EXTRA_DOG_RATE}/night</strong>!
+            Select your dates and submit a booking request. We'll review it and send you a payment link within 24 hours if approved.
+            Stays of 5+ nights get 10% off. Bringing a second dog? Just <strong>+${EXTRA_DOG_RATE}/night</strong>!
           </p>
         </div>
 
@@ -224,7 +272,7 @@ export default function Booking() {
               <div className="legend-item"><span className="dot selected" />Selected</div>
             </div>
 
-            {/* Dog selector — only shown when logged in and has dogs */}
+            {/* Dog selector */}
             {user && dogs.length > 0 && (
               <div className="dog-selector">
                 <div className="dog-selector-title">Which dog(s) are coming?</div>
@@ -284,42 +332,37 @@ export default function Booking() {
             {summary && (
               <>
                 <div className="summary-divider" />
-
                 <div className="summary-row">
                   <span>${summary.nightlyRate}/night × {summary.nights} nights</span>
                   <span>${(summary.nightlyRate * summary.nights).toFixed(2)}</span>
                 </div>
-
                 {summary.dogCount > 1 && (
                   <div className="summary-row dog-extra">
-                    <span>🦴 2nd dog (+${EXTRA_DOG_RATE}/night included)</span>
+                    <span>🦴 2nd dog included</span>
                   </div>
                 )}
-
                 {summary.discountApplied && (
                   <div className="summary-row discount">
                     <span>🎉 10% discount (5+ nights)</span>
                     <span>-${((summary.nightlyRate * summary.nights) - summary.subtotal).toFixed(2)}</span>
                   </div>
                 )}
-
                 <div className="summary-row total">
                   <span>Total</span>
                   <strong>${summary.subtotal.toFixed(2)}</strong>
                 </div>
-
                 <div className="summary-divider" />
-
                 <div className="summary-row deposit">
-                  <span>Deposit due now</span>
+                  <span>Deposit (if approved)</span>
                   <strong>${summary.depositAmount}</strong>
                 </div>
                 <div className="summary-row">
-                  <span>Balance due at checkout</span>
+                  <span>Balance due at pickup</span>
                   <span>${summary.balanceDue.toFixed(2)}</span>
                 </div>
-
-                <div className="summary-policy">✅ Free cancellation anytime</div>
+                <div className="summary-policy">
+                  📋 We'll review your request within 24 hours
+                </div>
               </>
             )}
 
@@ -327,16 +370,22 @@ export default function Booking() {
 
             <button
               className="btn-book"
-              onClick={handleBook}
-              disabled={!checkIn || !checkOut || !summary || loading}
+              onClick={handleSubmitRequest}
+              disabled={!checkIn || !checkOut || !summary || loading || authLoading}
             >
-              {loading ? 'Setting up...' : user ? 'Continue to Payment →' : 'Log In to Book →'}
+              {loading
+                ? 'Submitting request...'
+                : user
+                  ? 'Submit Booking Request →'
+                  : 'Log In to Request →'}
             </button>
 
             {!user && (
               <p className="summary-login-note">
-                You'll need an account to complete your booking.{' '}
-                <button onClick={() => navigate('/login')} className="link-btn">Log in or sign up</button>
+                You'll need an account to request a booking.{' '}
+                <button onClick={() => navigate('/login', { state: { from: '/booking' } })} className="link-btn">
+                  Log in or sign up
+                </button>
               </p>
             )}
           </div>

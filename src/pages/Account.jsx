@@ -221,9 +221,22 @@ export default function Account() {
   }
 
   const statusColor = (status) => ({
-    confirmed: '#2D5016', pending: '#D4943A',
-    cancelled: '#999', completed: '#7A9E5A'
+    pending_approval: '#D4943A',
+    approved: '#7BBFCF',
+    confirmed: '#2D5016',
+    completed: '#7A9E5A',
+    cancelled: '#999',
+    declined: '#999',
   }[status] || '#999')
+
+  const statusLabel = (status) => ({
+    pending_approval: 'Pending Approval',
+    approved: 'Approved — Please Pay Deposit',
+    confirmed: 'Confirmed',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+    declined: 'Declined',
+  }[status] || status)
 
   if (loading) return <div className="account-loading">Loading your account... 🦴</div>
 
@@ -298,6 +311,11 @@ export default function Account() {
                       {b.dog_count > 1 ? ` · ${b.dog_count} dogs` : ''}
                       {b.discount_applied ? ' · 10% discount applied 🎉' : ''}
                     </div>
+                    {b.decline_reason && (
+                      <div style={{ fontSize: '0.8rem', color: '#aaa', fontStyle: 'italic', marginTop: '4px' }}>
+                        {b.decline_reason}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="booking-right">
@@ -305,14 +323,27 @@ export default function Account() {
                   <div className="booking-deposit">
                     {b.deposit_paid ? '✅ Deposit paid' : '⏳ Deposit pending'}
                   </div>
-                  <div className="booking-status" style={{ color: statusColor(b.status) }}>
-                    {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
-                  </div>
-                  {b.status !== 'cancelled' && b.status !== 'completed' && (
+                  {b.status === 'approved' && b.stripe_checkout_url ? (
+                    <a
+                      href={b.stripe_checkout_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="booking-status"
+                      style={{ color: statusColor(b.status), textDecoration: 'underline', cursor: 'pointer' }}
+                      >
+                      {statusLabel(b.status)}
+                    </a>
+                  ) : (
+                    <div className="booking-status" style={{ color: statusColor(b.status) }}>
+                      {statusLabel(b.status)}
+                    </div>
+                  )}
+                  {b.status !== 'cancelled' && b.status !== 'completed' && b.status !== 'declined' && (
                     <button onClick={() => cancelBooking(b.id)} className="btn-cancel">
                       Cancel
                     </button>
                   )}
+
                 </div>
               </div>
             ))}
