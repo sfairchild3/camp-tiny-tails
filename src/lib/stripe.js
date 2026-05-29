@@ -15,7 +15,7 @@ export const getStripe = () => {
 // ── PRICING CONSTANTS ──────────────────────────────────
 export const BASE_NIGHTLY_RATE   = 70   // standard rate, first dog
 export const EXTRA_DOG_RATE      = 10   // per additional dog per night
-export const DEPOSIT_AMOUNT      = 50
+export const DEPOSIT_AMOUNT      = 40
 export const DISCOUNT_THRESHOLD  = 5    // nights before discount kicks in
 export const DISCOUNT_RATE       = 0.10 // 10%
 export const MAX_DOGS            = 2
