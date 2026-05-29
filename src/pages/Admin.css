@@ -264,6 +264,75 @@
   color: #555;
 }
 
+.custom-rate-row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--tan);
+}
+
+.custom-rate-label {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--forest);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.custom-rate-hint {
+  font-weight: 400;
+  color: #aaa;
+  font-size: 0.78rem;
+  margin-left: 6px;
+}
+
+.custom-rate-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rate-prefix {
+  font-weight: 800;
+  color: var(--forest);
+  font-size: 1rem;
+}
+
+.custom-rate-input {
+  width: 80px;
+  padding: 8px 10px;
+  border: 2px solid var(--tan);
+  border-radius: 8px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.custom-rate-input:focus { border-color: var(--forest); }
+
+.btn-save-rate {
+  background: var(--forest);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-save-rate:hover { opacity: 0.85; }
+.btn-save-rate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.custom-rate-active {
+  font-size: 0.8rem;
+  color: var(--sage);
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+
 .dog-flags { display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap; }
 .flag-ok { color: var(--sage); font-size: 0.78rem; font-weight: 700; }
 .flag-warn { color: var(--rust); font-size: 0.78rem; font-weight: 700; }

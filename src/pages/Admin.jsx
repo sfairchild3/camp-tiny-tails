@@ -10,23 +10,25 @@ export default function Admin() {
   const { user, signOut, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
-  const [bookings, setBookings]         = useState([])
-  const [clients, setClients]           = useState([])
+  const [bookings, setBookings] = useState([])
+  const [clients, setClients] = useState([])
   const [blockedDates, setBlockedDates] = useState([])
-  const [tab, setTab]                   = useState('Bookings')
-  const [loading, setLoading]           = useState(true)
-  const [message, setMessage]           = useState('')
+  const [tab, setTab] = useState('Bookings')
+  const [loading, setLoading] = useState(true)
+  const [message, setMessage] = useState('')
+  const [customRates, setCustomRates] = useState({})
+  const [savingRate, setSavingRate] = useState(null)
 
   // Decline modal
   const [declineModal, setDeclineModal] = useState(null) // bookingId or null
   const [declineReason, setDeclineReason] = useState('')
-  const [actioning, setActioning]       = useState(false)
+  const [actioning, setActioning] = useState(false)
 
   // Block date range
-  const [blockFrom, setBlockFrom]     = useState('')
-  const [blockTo, setBlockTo]         = useState('')
+  const [blockFrom, setBlockFrom] = useState('')
+  const [blockTo, setBlockTo] = useState('')
   const [blockReason, setBlockReason] = useState('')
-  const [blocking, setBlocking]       = useState(false)
+  const [blocking, setBlocking] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -46,7 +48,7 @@ export default function Admin() {
 
     const { data: clientsData } = await supabase
       .from('profiles')
-      .select(`*, dogs(*)`)
+      .select(`*, dogs(*), custom_nightly_rate`)
       .order('created_at', { ascending: false })
     setClients(clientsData || [])
 
@@ -132,10 +134,10 @@ export default function Admin() {
     if (!blockFrom) { setMessage('Please select a start date.'); return }
     setBlocking(true)
     setMessage('')
-    const end   = blockTo || blockFrom
+    const end = blockTo || blockFrom
     const start = new Date(blockFrom)
-    const stop  = new Date(end)
-    const rows  = []
+    const stop = new Date(end)
+    const rows = []
     for (let d = new Date(start); d <= stop; d.setDate(d.getDate() + 1)) {
       rows.push({ date: d.toISOString().split('T')[0], reason: blockReason || 'Unavailable' })
     }
@@ -156,7 +158,7 @@ export default function Admin() {
 
   const removeBlockedRange = async () => {
     if (!blockFrom) return
-    const end   = blockTo || blockFrom
+    const end = blockTo || blockFrom
     const dates = []
     for (let d = new Date(blockFrom); d <= new Date(end); d.setDate(d.getDate() + 1)) {
       dates.push(d.toISOString().split('T')[0])
@@ -166,29 +168,48 @@ export default function Admin() {
     fetchAll()
   }
 
+  // ── Set Custom Rate ──────────────────────────────────────
+  const saveCustomRate = async (clientId, rate) => {
+    setSavingRate(clientId)
+    const value = rate === '' ? null : parseFloat(rate)
+    console.log('updating:', clientId, 'value:', value)
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ custom_nightly_rate: value })
+      .eq('id', clientId)
+    
+    if (!error) {
+      setMessage(value ? `Custom rate of $${value}/night saved!` : 'Custom rate removed.')
+    } else {
+      setMessage(`Error: ${error.message}`)
+    }
+    setSavingRate(null)
+  }
+
   const statusColor = (status) => ({
     pending_approval: '#D4943A',
-    approved:         '#7BBFCF',
-    confirmed:        '#2D5016',
-    completed:        '#7A9E5A',
-    cancelled:        '#999',
-    declined:         '#999',
+    approved: '#7BBFCF',
+    confirmed: '#2D5016',
+    completed: '#7A9E5A',
+    cancelled: '#999',
+    declined: '#999',
   }[status] || '#999')
 
   const statusLabel = (status) => ({
     pending_approval: 'Pending Approval',
-    approved:         'Awaiting Payment',
-    confirmed:        'Confirmed',
-    completed:        'Completed',
-    cancelled:        'Cancelled',
-    declined:         'Declined',
+    approved: 'Awaiting Payment',
+    confirmed: 'Confirmed',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+    declined: 'Declined',
   }[status] || status)
 
   if (loading) return <div className="admin-loading">Loading... 🦴</div>
 
   const pendingApproval = bookings.filter(b => b.status === 'pending_approval')
   const upcoming = bookings.filter(b => b.status === 'confirmed' && new Date(b.check_in) >= new Date())
-  const revenue  = bookings
+  const revenue = bookings
     .filter(b => b.status === 'confirmed' || b.status === 'completed')
     .reduce((sum, b) => sum + (b.deposit_paid ? b.deposit_amount : 0), 0)
 
@@ -281,9 +302,9 @@ export default function Admin() {
                     {b.profiles?.full_name} · {b.profiles?.email} · {b.profiles?.phone}
                   </div>
                   <div className="admin-booking-dates">
-                    {new Date(b.check_in + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })}
+                    {new Date(b.check_in + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     {' → '}
-                    {new Date(b.check_out + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
+                    {new Date(b.check_out + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     {' · '}{b.nights} night{b.nights > 1 ? 's' : ''}
                     {b.discount_applied ? ' · 10% off 🎉' : ''}
                   </div>
@@ -357,6 +378,41 @@ export default function Admin() {
                 {c.emergency_contact && (
                   <div className="client-detail">🆘 {c.emergency_contact} · {c.emergency_phone}</div>
                 )}
+                <div className="custom-rate-row">
+                  <label className="custom-rate-label">
+                    🦴 Custom nightly rate
+                    <span className="custom-rate-hint">(leave blank for standard $70/night)</span>
+                  </label>
+                  <div className="custom-rate-input-row">
+                    <span className="rate-prefix">$</span>
+                    <input
+                      type="number"
+                      className="custom-rate-input"
+                      placeholder="70"
+                      defaultValue={c.custom_nightly_rate || ''}
+                      onChange={e => {
+                        const val = e.target.value
+                        setCustomRates(prev => ({ ...prev, [c.id]: val }))
+                      }}
+                    />
+                    <button
+                      className="btn-save-rate"
+                      onClick={() => {
+                        const rate = customRates[c.id] ?? c.custom_nightly_rate ?? ''
+                        saveCustomRate(c.id, rate)
+                      }}
+                      disabled={savingRate === c.id}
+                    >
+                      {savingRate === c.id ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                  {c.custom_nightly_rate && (
+                    <div className="custom-rate-active">
+                      ✅ Currently paying ${c.custom_nightly_rate}/night
+                    </div>
+                  )}
+                </div>
+
                 {c.dogs?.map(dog => (
                   <div key={dog.id} className="client-dog">
                     <strong>🦴 {dog.name}</strong> · {dog.breed} · {dog.weight}lbs · {dog.age}yr
@@ -408,7 +464,7 @@ export default function Admin() {
               {blockedDates.map(d => (
                 <div key={d.id} className="blocked-item">
                   <div>
-                    <strong>{new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'long', day:'numeric', year:'numeric' })}</strong>
+                    <strong>{new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}</strong>
                     {d.reason && <span className="blocked-reason"> · {d.reason}</span>}
                   </div>
                   <button onClick={() => removeBlockedDate(d.id)} className="btn-unblock">Unblock</button>
