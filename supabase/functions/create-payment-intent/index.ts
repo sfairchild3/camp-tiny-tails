@@ -1,5 +1,6 @@
-import Stripe from 'https://esm.sh/stripe@12.18.0?target=deno&no-check'
+import Stripe from "npm:stripe@^14.21.0";
 
+// Ensure the apiVersion matches your older SDK package version
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
   apiVersion: '2024-06-20',
   httpClient: Stripe.createFetchHttpClient(),
@@ -11,6 +12,7 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -18,6 +20,7 @@ Deno.serve(async (req) => {
   try {
     const { bookingId, amount, paymentType, customerEmail, description } = await req.json()
 
+    // Validate inputs
     if (!bookingId || !amount || !paymentType || !customerEmail) {
       throw new Error('Missing required fields')
     }
@@ -31,6 +34,9 @@ Deno.serve(async (req) => {
       customer = await stripe.customers.create({ email: customerEmail })
     }
 
+    // Fallback for origin header if running locally or missing
+    const origin = req.headers.get('origin') || 'http://localhost:3000'
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -42,7 +48,7 @@ Deno.serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: 'Camp Tiny Tails',
-              description,
+              description: description || 'Booking payment', // Fallback value
             },
             unit_amount: Math.round(amount * 100),
           },
@@ -53,8 +59,8 @@ Deno.serve(async (req) => {
         bookingId,
         paymentType,
       },
-      success_url: `${req.headers.get('origin')}/account?booking=success`,
-      cancel_url:  `${req.headers.get('origin')}/booking`,
+      success_url: `${origin}/account?booking=success`,
+      cancel_url: `${origin}/booking`,
     })
 
     return new Response(
@@ -62,10 +68,14 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
-  } catch (error) {
+  }
+  catch (error) {
+    console.error('Stripe error:', error.message, error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, details: error.toString() }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
+
+
 })

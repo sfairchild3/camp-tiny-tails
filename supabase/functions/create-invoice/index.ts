@@ -1,9 +1,8 @@
-import Stripe from 'https://esm.sh/stripe@12.18.0?target=deno&no-check'
+import Stripe from 'npm:stripe@14.21.0'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-  apiVersion: '2024-06-20',
-  httpClient: Stripe.createFetchHttpClient(),
+  apiVersion: '2024-06-20'
 })
 
 const supabase = createClient(
@@ -90,7 +89,7 @@ Deno.serve(async (req) => {
     // 2. Create item attached to THAT specific invoice only
     await stripe.invoiceItems.create({
       customer: customerId,
-      invoice: invoice.id, 
+      invoice: invoice.id,
       amount: Math.round(balanceDue * 100),
       currency: 'usd',
       description,
@@ -98,6 +97,9 @@ Deno.serve(async (req) => {
 
     // 3. Finalize
     await stripe.invoices.finalizeInvoice(invoice.id)
+
+    // 4. Send the invoice email
+    await stripe.invoices.sendInvoice(invoice.id)
 
     return new Response(
       JSON.stringify({

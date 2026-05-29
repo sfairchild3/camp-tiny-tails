@@ -24,11 +24,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.text()
     const signature = req.headers.get('stripe-signature') ?? ''
-    const webhookSecret = Deno.env.get(
-      req.headers.get('stripe-livemode') === 'true'
-        ? 'STRIPE_WEBHOOK_SECRET'
-        : 'STRIPE_WEBHOOK_SECRET_TEST'
-    ) ?? ''
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? ''
 
     let event
     try {
