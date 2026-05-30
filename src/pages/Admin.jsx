@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import './Admin.css'
+import AdminCalendar from '../components/AdminCalendar'
 
 const ADMIN_EMAIL = 'stay@camptinytails.com' // 👈 your email
 
@@ -173,12 +174,12 @@ export default function Admin() {
     setSavingRate(clientId)
     const value = rate === '' ? null : parseFloat(rate)
     console.log('updating:', clientId, 'value:', value)
-    
+
     const { data, error } = await supabase
       .from('profiles')
       .update({ custom_nightly_rate: value })
       .eq('id', clientId)
-    
+
     if (!error) {
       setMessage(value ? `Custom rate of $${value}/night saved!` : 'Custom rate removed.')
     } else {
@@ -274,7 +275,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="admin-tabs">
-          {['Bookings', 'Clients', 'Block Dates'].map(t => (
+          {['Bookings', 'Calendar', 'Clients', 'Block Dates'].map(t => (
             <button
               key={t}
               className={`admin-tab ${tab === t ? 'active' : ''}`}
@@ -365,6 +366,7 @@ export default function Admin() {
             ))}
           </div>
         )}
+        {tab === 'Calendar' && <AdminCalendar />}
 
         {/* ── CLIENTS ── */}
         {tab === 'Clients' && (
